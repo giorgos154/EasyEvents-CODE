@@ -2,10 +2,11 @@ import customtkinter as ctk
 from datetime import datetime
 
 class EventDiscussionPage(ctk.CTkFrame):
-    def __init__(self, master, event):
+    def __init__(self, master, dashboard, event):
         super().__init__(master, fg_color="white")
+        self.dashboard = dashboard
         self.event = event
-        
+
         # Header
         header_frame = ctk.CTkFrame(self, fg_color="white")
         header_frame.pack(fill="x", padx=20, pady=20)
@@ -14,6 +15,7 @@ class EventDiscussionPage(ctk.CTkFrame):
         self.back_btn = ctk.CTkButton(
             header_frame,
             text="← Back",
+            command=self.dashboard.back_to_events,
             fg_color="#C8A165",
             hover_color="#b38e58",
             font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
@@ -22,8 +24,8 @@ class EventDiscussionPage(ctk.CTkFrame):
             corner_radius=8,
             text_color="black"
         )
-        self.back_btn.pack(side="left")
         
+        self.back_btn.pack(side="left")
         # Event Title
         title = ctk.CTkLabel(
             header_frame,

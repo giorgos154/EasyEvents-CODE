@@ -1,192 +1,257 @@
 import customtkinter as ctk
-from datetime import datetime
-from tkcalendar import DateEntry
 
 class FindEventsPage(ctk.CTkFrame):
-    def __init__(self, master):
+    def __init__(self, master, dashboard):
         super().__init__(master, fg_color="white")
+        self.dashboard = dashboard
+        
         # Header
         self.header = ctk.CTkLabel(self, text="Find Events", 
                                    font=ctk.CTkFont(family="Roboto", size=24, weight="bold"))
         self.header.pack(pady=20, padx=20)
         
-        # Main filter container
-        self.filter_frame = ctk.CTkFrame(self, fg_color="white")
-        self.filter_frame.pack(fill="x", padx=20, pady=(0,20))
+        # Search Frame
+        search_frame = ctk.CTkFrame(self, fg_color="white")
+        search_frame.pack(fill="x", padx=20, pady=(0,20))
         
-        # Configure grid weights
-        self.filter_frame.grid_columnconfigure(0, weight=1)  # left side
-        self.filter_frame.grid_columnconfigure(1, weight=1)  # right side
+        # Search bar
+        self.search_var = ctk.StringVar()
+        search_entry = ctk.CTkEntry(
+            search_frame,
+            placeholder_text="Search events...",
+            font=ctk.CTkFont(family="Roboto", size=14),
+            width=300,
+            textvariable=self.search_var
+        )
+        search_entry.pack(side="left", padx=(0,10))
         
-        # Left Frame - dropdowns section
-        self.left_filter = ctk.CTkFrame(self.filter_frame, fg_color="white")
-        self.left_filter.grid(row=0, column=0, sticky="nsew", padx=(0,20))
+        # Search button
+        search_btn = ctk.CTkButton(
+            search_frame,
+            text="Search",
+            font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
+            fg_color="#C8A165",
+            hover_color="#b38e58",
+            width=100
+        )
+        search_btn.pack(side="left")
         
-        # City Dropdown
-        cities = [
-            "All Cities", "Athens", "Thessaloniki", "Patras", "Heraklion", "Larissa",
-            "Volos", "Ioannina", "Chania", "Kalamata", "Rhodes"
-        ]
-        self.city_dropdown = ctk.CTkComboBox(self.left_filter, values=cities,
-                                             font=ctk.CTkFont(family="Roboto", size=14), width=200)
-        self.city_dropdown.set("All Cities")
-        self.city_dropdown.pack(pady=(0,10), fill="x")
+        # Filters Frame
+        filters_frame = ctk.CTkFrame(self, fg_color="white")
+        filters_frame.pack(fill="x", padx=20, pady=(0,10))
         
-        # Category Dropdown
-        self.categories = ["All Categories", "Conferences", "Workshops", "Sports", "Music", 
-                           "Arts & Culture", "Food & Drink", "Networking"]
-        self.category_dropdown = ctk.CTkComboBox(self.left_filter, values=self.categories,
-                                                 font=ctk.CTkFont(family="Roboto", size=14), width=200)
-        self.category_dropdown.set("All Categories")
-        self.category_dropdown.pack(fill="x")
+        # First row of filters
+        filter_row1 = ctk.CTkFrame(filters_frame, fg_color="white")
+        filter_row1.pack(fill="x", pady=5)
         
-        # Right Frame - dates
-        self.right_filter = ctk.CTkFrame(self.filter_frame, fg_color="white")
-        self.right_filter.grid(row=0, column=1, sticky="nsew")
-        self.right_filter.grid_columnconfigure(0, weight=1)
-        self.right_filter.grid_columnconfigure(1, weight=1)
+        # Category Filter
+        ctk.CTkLabel(filter_row1, text="Category:", font=ctk.CTkFont(family="Roboto", size=14)).pack(side="left")
+        categories = ["All Categories", "Technology", "Music", "Art", "Food", "Sports", "Business", "Education"]
+        category_menu = ctk.CTkOptionMenu(
+            filter_row1,
+            values=categories,
+            fg_color="#C8A165",
+            button_color="#b38e58",
+            width=150
+        )
+        category_menu.pack(side="left", padx=(10,20))
         
-        # Start Date with Label
-        self.start_date_label = ctk.CTkLabel(self.right_filter, text="Start Date:",
-                                             font=ctk.CTkFont(family="Roboto", size=14))
-        self.start_date_label.grid(row=0, column=0, pady=(0,5))
-        self.start_date_entry = DateEntry(self.right_filter, width=15, background='#C8A165',
-                                         foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd',
-                                         font=("Roboto", 12))
-        self.start_date_entry.grid(row=1, column=0, padx=20)
+        # City Filter
+        ctk.CTkLabel(filter_row1, text="City:", font=ctk.CTkFont(family="Roboto", size=14)).pack(side="left")
+        cities = ["All Cities", "Athens", "Thessaloniki", "Patras", "Heraklion", "Larissa", 
+                 "Volos", "Ioannina", "Chania", "Rhodes", "Kalamata"]
+        city_menu = ctk.CTkOptionMenu(
+            filter_row1,
+            values=cities,
+            fg_color="#C8A165",
+            button_color="#b38e58",
+            width=150
+        )
+        city_menu.pack(side="left", padx=(10,20))
         
-        # End Date with Label
-        self.end_date_label = ctk.CTkLabel(self.right_filter, text="End Date:", 
-                                           font=ctk.CTkFont(family="Roboto", size=14))
-        self.end_date_label.grid(row=0, column=1, pady=(0,5))
-        self.end_date_entry = DateEntry(self.right_filter, width=15, background='#C8A165',
-                                       foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd',
-                                       font=("Roboto", 12))
-        self.end_date_entry.grid(row=1, column=1, padx=20)
+        # Second row of filters
+        filter_row2 = ctk.CTkFrame(filters_frame, fg_color="white")
+        filter_row2.pack(fill="x", pady=5)
         
-        # Sort and Search Panel
-        self.sort_frame = ctk.CTkFrame(self, fg_color="white")
-        self.sort_frame.pack(fill="x", padx=20, pady=(20,20))
+        # Price Range Filter
+        ctk.CTkLabel(filter_row2, text="Price:", font=ctk.CTkFont(family="Roboto", size=14)).pack(side="left")
+        price_ranges = ["All Prices", "0-25€", "26-50€", "51-100€", "100€+"]
+        price_menu = ctk.CTkOptionMenu(
+            filter_row2,
+            values=price_ranges,
+            fg_color="#C8A165",
+            button_color="#b38e58",
+            width=150
+        )
+        price_menu.pack(side="left", padx=(10,20))
         
-        # Left side - Sort options
-        self.sort_label = ctk.CTkLabel(self.sort_frame, text="Sort by:", 
-                                       font=ctk.CTkFont(family="Roboto", size=14))
-        self.sort_label.pack(side="left", padx=10, pady=10)
+        # Date Filter
+        ctk.CTkLabel(filter_row2, text="Date:", font=ctk.CTkFont(family="Roboto", size=14)).pack(side="left")
+        date_options = ["Any Date", "Today", "This Week", "This Month", "Next Month"]
+        date_menu = ctk.CTkOptionMenu(
+            filter_row2,
+            values=date_options,
+            fg_color="#C8A165",
+            button_color="#b38e58",
+            width=150
+        )
+        date_menu.pack(side="left", padx=(10,20))
         
-        sort_options = ["Date (Soonest First)", "Location (Nearest)", "Popularity", "Category"]
-        self.sort_dropdown = ctk.CTkComboBox(self.sort_frame, values=sort_options,
-                                             font=ctk.CTkFont(family="Roboto", size=14), width=200)
-        self.sort_dropdown.set("Date (Soonest First)")
-        self.sort_dropdown.pack(side="left", padx=10, pady=10)
+        # Sort Frame
+        sort_frame = ctk.CTkFrame(filters_frame, fg_color="white")
+        sort_frame.pack(fill="x", pady=5)
         
-        # Right side - Search button
-        self.search_btn = ctk.CTkButton(self.sort_frame, text="Search  →",
-                                        fg_color="#C8A165", hover_color="#b38e58",
-                                        font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
-                                        width=120, height=35, corner_radius=8, text_color="black",
-                                        command=self.apply_filters)
-        self.search_btn.pack(side="right", padx=20, pady=10)
+        # Sort Options
+        ctk.CTkLabel(sort_frame, text="Sort by:", font=ctk.CTkFont(family="Roboto", size=14)).pack(side="left")
+        sort_options = ["Date ↑", "Date ↓", "Price ↑", "Price ↓", "Popularity"]
+        sort_menu = ctk.CTkOptionMenu(
+            sort_frame,
+            values=sort_options,
+            fg_color="#C8A165",
+            button_color="#b38e58",
+            width=150
+        )
+        sort_menu.pack(side="left", padx=(10,20))
         
-        # Scrollable Event List
+        # Set default values
+        category_menu.set("All Categories")
+        city_menu.set("All Cities")
+        price_menu.set("All Prices")
+        date_menu.set("Any Date")
+        sort_menu.set("Date ↑")
+        
+        # Separator
+        separator = ctk.CTkFrame(self, height=2, fg_color="#E5E5E5")
+        separator.pack(fill="x", padx=20, pady=10)
+        
+        # Scrollable Events List Section
         self.events_frame = ctk.CTkScrollableFrame(self, fg_color="white")
         self.events_frame.pack(fill="both", expand=True, padx=20, pady=20)
         
-        # Mock events
+        # Mock events data
         self.mock_events = [
             {
                 "title": "Tech Conference 2025",
-                "category": "Conferences",
                 "date": "2025-04-15 09:00",
                 "location": "Athens Convention Center",
-                "description": "Annual tech conference featuring industry leaders."
+                "description": "Annual tech conference featuring industry leaders discussing latest innovations.",
+                "tags": ["Technology", "Conference"],
+                "price": "80€"
             },
             {
                 "title": "Summer Music Festival",
-                "category": "Music",
                 "date": "2025-06-20 18:00",
                 "location": "Thessaloniki Park",
-                "description": "Enjoy live performances from top artists."
+                "description": "A weekend of live music performances featuring both local and international artists.",
+                "tags": ["Music", "Festival"],
+                "price": "45€"
             },
             {
                 "title": "Art & Culture Expo",
-                "category": "Arts & Culture",
                 "date": "2025-05-10 10:00",
                 "location": "Heraklion Art Museum",
-                "description": "Explore modern art exhibitions and workshops."
-            },
-            {
-                "title": "Sports Tournament",
-                "category": "Sports",
-                "date": "2025-07-05 14:00",
-                "location": "Patras Stadium",
-                "description": "Regional sports tournament with multiple competitions."
+                "description": "Explore contemporary art exhibitions and participate in cultural workshops.",
+                "tags": ["Art", "Culture"],
+                "price": "25€"
             },
             {
                 "title": "Food & Wine Festival",
-                "category": "Food & Drink",
-                "date": "2025-08-15 11:00",
-                "location": "Larissa Central Plaza",
-                "description": "Taste local cuisines and wines from all over Greece."
+                "date": "2025-07-01 12:00",
+                "location": "Patras Central Square",
+                "description": "Taste local cuisine and wines from various regions of Greece.",
+                "tags": ["Food", "Wine"],
+                "price": "35€"
             }
         ]
         
-        self.display_events(self.mock_events)
-        
-    def display_events(self, events):
-        for widget in self.events_frame.winfo_children():
-            widget.destroy()
-        
-        for event in events:
-            card = ctk.CTkFrame(self.events_frame, fg_color="white", border_width=1, border_color="#C8A165")
+        # Display events
+        self.display_events()
+    
+    def display_events(self):
+        for event in self.mock_events:
+            # Event Card
+            card = ctk.CTkFrame(self.events_frame, fg_color="white", 
+                               border_width=1, border_color="#E5E5E5")
             card.pack(fill="x", padx=10, pady=10)
             
-            # Event title
-            title_label = ctk.CTkLabel(card, text=event["title"], 
-                                        font=ctk.CTkFont(family="Roboto", size=18, weight="bold"))
-            title_label.pack(anchor="w", padx=10, pady=(10,0))
+            # Content Frame (left side)
+            content_frame = ctk.CTkFrame(card, fg_color="white")
+            content_frame.pack(side="left", fill="both", expand=True, padx=10, pady=10)
+            
+            # Event Title
+            title_label = ctk.CTkLabel(
+                content_frame,
+                text=event["title"],
+                font=ctk.CTkFont(family="Roboto", size=18, weight="bold")
+            )
+            title_label.pack(anchor="w")
             
             # Date & Time
-            dt_label = ctk.CTkLabel(card, text=f"Date & Time: {event['date']}", 
-                                     font=ctk.CTkFont(family="Roboto", size=14))
-            dt_label.pack(anchor="w", padx=10, pady=(5,0))
+            dt_label = ctk.CTkLabel(
+                content_frame,
+                text=f"Date & Time: {event['date']}",
+                font=ctk.CTkFont(family="Roboto", size=14)
+            )
+            dt_label.pack(anchor="w", pady=(5,0))
             
             # Location
-            loc_label = ctk.CTkLabel(card, text=f"Location: {event['location']}", 
-                                      font=ctk.CTkFont(family="Roboto", size=14))
-            loc_label.pack(anchor="w", padx=10, pady=(5,0))
+            loc_label = ctk.CTkLabel(
+                content_frame,
+                text=f"Location: {event['location']}",
+                font=ctk.CTkFont(family="Roboto", size=14)
+            )
+            loc_label.pack(anchor="w", pady=(5,0))
             
             # Description
-            desc_label = ctk.CTkLabel(card, text=event["description"], 
-                                       font=ctk.CTkFont(family="Roboto", size=14))
-            desc_label.pack(anchor="w", padx=10, pady=(5,10))
+            desc_label = ctk.CTkLabel(
+                content_frame,
+                text=event["description"],
+                font=ctk.CTkFont(family="Roboto", size=14),
+                wraplength=600,
+                justify="left"
+            )
+            desc_label.pack(anchor="w", pady=(5,0))
+            
+            # Tags Frame
+            tags_frame = ctk.CTkFrame(content_frame, fg_color="white")
+            tags_frame.pack(anchor="w", pady=(10,0))
+            
+            for tag in event["tags"]:
+                tag_label = ctk.CTkLabel(
+                    tags_frame,
+                    text=tag,
+                    font=ctk.CTkFont(family="Roboto", size=12),
+                    fg_color="#E5E5E5",
+                    corner_radius=12,
+                    padx=10,
+                    pady=5
+                )
+                tag_label.pack(side="left", padx=5)
+            
+            # Buttons Frame (right side)
+            buttons_frame = ctk.CTkFrame(card, fg_color="white")
+            buttons_frame.pack(side="right", padx=10, pady=10)
+            
+            # Price Label
+            price_label = ctk.CTkLabel(
+                buttons_frame,
+                text=event["price"],
+                font=ctk.CTkFont(family="Roboto", size=24, weight="bold"),
+                text_color="#C8A165"
+            )
+            price_label.pack(pady=(0,10))
             
             # Details button
-            details_btn = ctk.CTkButton(card, text="Details  →",
-                                        fg_color="#C8A165", hover_color="#b38e58",
-                                        font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
-                                        width=120, height=35, corner_radius=8, text_color="black")
-            details_btn.pack(anchor="e", padx=10, pady=(0,10))
-    
-    def apply_filters(self):
-        city = self.city_dropdown.get()
-        category = self.category_dropdown.get()
-        
-        filtered_events = self.mock_events
-        
-        if city != "All Cities":
-            filtered_events = [e for e in filtered_events if city in e["location"]]
-        
-        try:
-            start_date = self.start_date_entry.get_date()
-            end_date = self.end_date_entry.get_date()
-            filtered_events = [
-                e for e in filtered_events 
-                if start_date <= datetime.strptime(e["date"].split()[0], "%Y-%m-%d").date() <= end_date
-            ]
-        except Exception as ex:
-            print("Date filtering error:", ex)
-        
-        if category != "All Categories":
-            filtered_events = [e for e in filtered_events if e["category"] == category]
-        
-        self.display_events(filtered_events)
+            details_btn = ctk.CTkButton(
+                buttons_frame,
+                text="Details  →",
+                fg_color="#C8A165",
+                hover_color="#b38e58",
+                font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
+                width=120,
+                height=35,
+                corner_radius=8,
+                text_color="black",
+                command=lambda e=event: self.dashboard.show_event_details(e)
+            )
+            details_btn.pack()

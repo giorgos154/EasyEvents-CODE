@@ -7,11 +7,14 @@ from ui.user.myprofile import MyProfilePage
 from ui.user.points import PointsPage
 from ui.user.rewards import RewardsPage
 from ui.user.rate_events import RateEventsPage
+from ui.user.event_discussion import EventDiscussionPage
+from ui.user.event_details import EventDetailsPage
 
 class UserDashboard(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
         self.current_page = None
+        self.last_page = None  # Track last main page for back navigation
 
         # Sidebar (Gold background)
         self.sidebar = ctk.CTkFrame(self, corner_radius=0, fg_color="#C8A165", width=250)
@@ -72,11 +75,14 @@ class UserDashboard(ctk.CTkFrame):
         self.content_area = ctk.CTkFrame(self, corner_radius=0, fg_color="black")
         self.content_area.pack(side="left", fill="both", expand=True)
 
-        # Center frame for welcome content
+        # Welcome frame
+        self.setup_welcome_frame()
+
+    def setup_welcome_frame(self):
+        """Setup welcome frame with logo and text"""
         self.welcome_frame = ctk.CTkFrame(self.content_area, fg_color="transparent")
         self.welcome_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        # Load and display welcome logo
         welcome_image_path = os.path.join("assets", "logo_transparent2.png")
         welcome_image = Image.open(welcome_image_path)
         self.welcome_logo = ctk.CTkImage(
@@ -100,28 +106,29 @@ class UserDashboard(ctk.CTkFrame):
         )
         self.welcome_text.pack(pady=20)
 
-    def show_page(self, page_name):
-        """Update content area based on selected menu item"""
-        # Hide welcome frame
-        self.welcome_frame.place_forget()
-
-        # Clear current page if exists
+    def clear_content(self):
+        """Clear current content area"""
         if self.current_page is not None:
             self.current_page.destroy()
+        self.welcome_frame.place_forget()
+
+    def show_page(self, page_name):
+        """Update content area based on selected menu item"""
+        self.clear_content()
+        self.last_page = page_name
 
         # Show selected page
         if page_name == "Homepage":
             self.welcome_frame.place(relx=0.5, rely=0.5, anchor="center")
             self.current_page = None
         elif page_name == "Find Events":
-            self.current_page = FindEventsPage(self.content_area)
+            self.current_page = FindEventsPage(self.content_area, self)
             self.current_page.pack(fill="both", expand=True)
         elif page_name == "My Events":
-            self.current_page = MyEventsPage(self.content_area)
+            self.current_page = MyEventsPage(self.content_area, self)
             self.current_page.pack(fill="both", expand=True)
         elif page_name == "Rate Events":
             self.current_page = RateEventsPage(self.content_area)
-            self.current_page.pack(fill="both", expand=True)
             self.current_page.pack(fill="both", expand=True)
         elif page_name == "My Profile":
             self.current_page = MyProfilePage(self.content_area)
@@ -130,21 +137,35 @@ class UserDashboard(ctk.CTkFrame):
             self.current_page = PointsPage(self.content_area)
             self.current_page.pack(fill="both", expand=True)
 
+    def show_event_details(self, event):
+        """Show event details page"""
+        self.clear_content()
+        self.current_page = EventDetailsPage(self.content_area, self, event)
+        self.current_page.pack(fill="both", expand=True)
+    
+    def show_event_discussion(self, event):
+        """Show event discussion page"""
+        self.clear_content()
+        self.current_page = EventDiscussionPage(self.content_area, self, event)
+        self.current_page.pack(fill="both", expand=True)
+    
     def show_rewards(self):
-        # Switch to rewards page
-        if self.current_page is not None:
-            self.current_page.destroy()
+        """Show rewards page"""
+        self.clear_content()
         self.current_page = RewardsPage(self.content_area)
         self.current_page.pack(fill="both", expand=True)
     
+    def back_to_events(self):
+        """Return to events list"""
+        self.show_page("My Events")
+    
+    def back_to_find_events(self):
+        """Return to find events list"""
+        self.show_page("Find Events")
+
     def back_to_points(self):
-        # Return to points page
-        if self.current_page is not None:
-            self.current_page.destroy()
-        self.current_page = PointsPage(self.content_area)
-        self.current_page.pack(fill="both", expand=True)
-                           
-                           
+        """Return to events list"""
+        self.show_page("Points & Rewards")
     def logout(self):
         """Handle logout logic"""
         print("Logging out...")

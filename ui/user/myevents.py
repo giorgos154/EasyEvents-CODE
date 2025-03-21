@@ -2,12 +2,11 @@ import customtkinter as ctk
 from datetime import datetime
 import time
 import threading
-from ui.user.event_discussion import EventDiscussionPage
 
 class MyEventsPage(ctk.CTkFrame):
-    def __init__(self, master):
+    def __init__(self, master, dashboard):
         super().__init__(master, fg_color="white")
-        self.master = master
+        self.dashboard = dashboard
         
         # Header
         self.header = ctk.CTkLabel(self, text="My Events", 
@@ -91,7 +90,7 @@ class MyEventsPage(ctk.CTkFrame):
             buttons_frame = ctk.CTkFrame(card, fg_color="white")
             buttons_frame.pack(side="right", padx=10, pady=10)
             
-            # Discussion button (replacing Details)
+            # Discussion button
             discussion_btn = ctk.CTkButton(
                 buttons_frame,
                 text="Discussion →",
@@ -102,7 +101,7 @@ class MyEventsPage(ctk.CTkFrame):
                 height=35,
                 corner_radius=8,
                 text_color="black",
-                command=lambda e=event: self.open_discussion(e)
+                command=lambda e=event: self.dashboard.show_event_discussion(e)
             )
             discussion_btn.pack(pady=(0,5))
             
@@ -133,27 +132,7 @@ class MyEventsPage(ctk.CTkFrame):
                 command=lambda e=event: self.show_withdraw_warning(e)
             )
             withdraw_btn.pack(pady=(5,0))
-    
-    def open_discussion(self, event):
-        # Hide current page
-        self.pack_forget()
-        
-        # Create and show discussion page
-        discussion_page = EventDiscussionPage(self.master, event)
-        discussion_page.pack(fill="both", expand=True)
-        
-        # Configure back button
-        discussion_page.back_btn.configure(command=self.show_events_page)
-    
-    def show_events_page(self):
-        # Remove discussion page
-        for widget in self.master.winfo_children():
-            widget.destroy()
-        
-        # Show events page again
-        self.__init__(self.master)
-        self.pack(fill="both", expand=True)
-    
+
     def show_withdraw_warning(self, event):
         # Create warning window
         warning = ctk.CTkToplevel(self)
