@@ -58,7 +58,7 @@ class EventDetailsPage(ctk.CTkFrame):
             ("👥 Status", "Joinable"),
             ("🌐 Visibility", "Public"),
             ("👥 Participants", "180/250"),
-            ("💶 Cost", "80€"),
+            ("💶 Cost", event.get("price", "80€")),
             ("👤 Organizer", "Tech Community Athens")
         ]
         
@@ -98,7 +98,7 @@ class EventDetailsPage(ctk.CTkFrame):
             width=200,
             height=40,
             corner_radius=8,
-            command=lambda: print("Inviting friends...")
+            command=lambda: self.dashboard.show_invite_friends(event)
         )
         invite_btn.pack(side="left", padx=10)
         
@@ -133,7 +133,7 @@ class EventDetailsPage(ctk.CTkFrame):
         # Confirmation message
         message = ctk.CTkLabel(
             dialog,
-            text=f"Are you sure you want to join\n{self.event['title']}?\n\nParticipation cost: 80€",
+            text=f"Are you sure you want to join\n{self.event['title']}?\n\nParticipation cost: {self.event.get('price', '80€')}",
             font=ctk.CTkFont(family="Roboto", size=14),
             justify="center"
         )
@@ -198,6 +198,6 @@ class EventDetailsPage(ctk.CTkFrame):
             hover_color="#45a049",
             font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
             width=100,
-            command=success.destroy
+            command=lambda: [success.destroy(), self.dashboard.show_page("My Events")]
         )
         ok_btn.pack(pady=20)

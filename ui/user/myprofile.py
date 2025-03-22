@@ -1,8 +1,10 @@
 import customtkinter as ctk
 
 class MyProfilePage(ctk.CTkFrame):
-    def __init__(self, master):
+    def __init__(self, master, dashboard):
         super().__init__(master, fg_color="white")
+        self.dashboard = dashboard
+        
         # Header
         self.header = ctk.CTkLabel(self, text="My Profile", 
                                    font=ctk.CTkFont(family="Roboto", size=24, weight="bold"))
@@ -63,6 +65,21 @@ class MyProfilePage(ctk.CTkFrame):
         # Buttons container
         self.button_container = ctk.CTkFrame(self.right_frame, fg_color="white")
         self.button_container.pack(expand=True)
+        
+        # My Invites button
+        self.invites_btn = ctk.CTkButton(
+            self.button_container,
+            text="My Invites (2)  →",
+            fg_color="#C8A165",
+            hover_color="#b38e58",
+            font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
+            width=300,
+            height=40,
+            corner_radius=8,
+            text_color="black",
+            command=lambda: self.dashboard.show_my_invites()
+        )
+        self.invites_btn.pack(pady=(0,10))
         
         # Edit button
         self.edit_btn = ctk.CTkButton(
@@ -130,6 +147,7 @@ class MyProfilePage(ctk.CTkFrame):
         
         self.edit_btn.pack_forget()
         self.view_events_btn.pack_forget()
+        self.invites_btn.pack_forget()
         self.save_btn.pack(pady=(0,10))
         self.cancel_btn.pack(pady=10)
         self.edit_mode = True
@@ -141,6 +159,7 @@ class MyProfilePage(ctk.CTkFrame):
         
         self.save_btn.pack_forget()
         self.cancel_btn.pack_forget()
+        self.invites_btn.pack(pady=(0,10))
         self.edit_btn.pack(pady=(0,10))
         self.view_events_btn.pack(pady=10)
         self.edit_mode = False
@@ -152,17 +171,36 @@ class MyProfilePage(ctk.CTkFrame):
             self.mock_profile[field] = entry.get()
         
         # Show success message
-        dialog = ctk.CTkDialog(
-            master=self,
-            title="Success!",
-            text="Your profile has been updated successfully.",
-            corner_radius=10
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Success!")
+        dialog.geometry("300x150")
+        dialog.transient(self)
+        dialog.grab_set()
+        
+        # Center dialog
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() - dialog.winfo_width()) // 2
+        y = (dialog.winfo_screenheight() - dialog.winfo_height()) // 2
+        dialog.geometry(f"+{x}+{y}")
+        
+        # Success message
+        message = ctk.CTkLabel(
+            dialog,
+            text="Your profile has been updated successfully!",
+            font=ctk.CTkFont(family="Roboto", size=14)
         )
-        dialog.get_button("OK").configure(
+        message.pack(expand=True)
+        
+        # OK button
+        ok_btn = ctk.CTkButton(
+            dialog,
+            text="OK",
             fg_color="#4CAF50",
             hover_color="#45a049",
-            font=ctk.CTkFont(family="Roboto", size=14, weight="bold")
+            font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
+            command=dialog.destroy
         )
+        ok_btn.pack(pady=20)
         
         self.disable_editing()
     
@@ -170,12 +208,12 @@ class MyProfilePage(ctk.CTkFrame):
         """Show past events dialog"""
         # Create dialog
         dialog = ctk.CTkToplevel(self)
-        dialog.title("Past Events I've Attended")
+        dialog.title("Past Events")
         dialog.geometry("500x600")
         dialog.transient(self)
         dialog.grab_set()
         
-        # Center dialog on screen
+        # Center dialog
         dialog.update_idletasks()
         x = (dialog.winfo_screenwidth() - dialog.winfo_width()) // 2
         y = (dialog.winfo_screenheight() - dialog.winfo_height()) // 2

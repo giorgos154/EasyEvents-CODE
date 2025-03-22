@@ -9,6 +9,8 @@ from ui.user.rewards import RewardsPage
 from ui.user.rate_events import RateEventsPage
 from ui.user.event_discussion import EventDiscussionPage
 from ui.user.event_details import EventDetailsPage
+from ui.user.invitefriends import InviteFriendsPage
+from ui.user.my_invites import MyInvitesPage
 
 class UserDashboard(ctk.CTkFrame):
     def __init__(self, master):
@@ -131,7 +133,7 @@ class UserDashboard(ctk.CTkFrame):
             self.current_page = RateEventsPage(self.content_area)
             self.current_page.pack(fill="both", expand=True)
         elif page_name == "My Profile":
-            self.current_page = MyProfilePage(self.content_area)
+            self.current_page = MyProfilePage(self.content_area, self)
             self.current_page.pack(fill="both", expand=True)
         elif page_name == "Points & Rewards":
             self.current_page = PointsPage(self.content_area)
@@ -149,6 +151,18 @@ class UserDashboard(ctk.CTkFrame):
         self.current_page = EventDiscussionPage(self.content_area, self, event)
         self.current_page.pack(fill="both", expand=True)
     
+    def show_invite_friends(self, event):
+        """Show invite friends page"""
+        self.clear_content()
+        self.current_page = InviteFriendsPage(self.content_area, self, event)
+        self.current_page.pack(fill="both", expand=True)
+    
+    def show_my_invites(self):
+        """Show my invites page"""
+        self.clear_content()
+        self.current_page = MyInvitesPage(self.content_area, self)
+        self.current_page.pack(fill="both", expand=True)
+    
     def show_rewards(self):
         """Show rewards page"""
         self.clear_content()
@@ -163,9 +177,6 @@ class UserDashboard(ctk.CTkFrame):
         """Return to find events list"""
         self.show_page("Find Events")
 
-    def back_to_points(self):
-        """Return to events list"""
-        self.show_page("Points & Rewards")
     def logout(self):
         """Handle logout logic"""
         print("Logging out...")
