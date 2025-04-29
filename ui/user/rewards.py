@@ -163,5 +163,5 @@ class RewardsPage(ctk.CTkFrame):
             )
     
     def go_back(self):
-        # This will be handled by the main app to switch back to points page
+      
         print("Going back to Points page...")

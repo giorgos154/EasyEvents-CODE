@@ -1,18 +1,20 @@
 from ui.user.dashboard import UserDashboard
+from ui.Organizer.dashboard import OrganizerDashboard
 import customtkinter as ctk
 from PIL import Image
 import os
 
 class LoginPage(ctk.CTkFrame):
-    def __init__(self, master):
+    def __init__(self, master, is_organizer=False):
         super().__init__(master)
+        self.is_organizer = is_organizer
 
-        # Load the logo image
+        # -- Fortosi tou logo -- #
         image_path = os.path.join("assets", "logo_transparent.png")
         logo_image = Image.open(image_path)
         self.logo_ctk = ctk.CTkImage(light_image=logo_image, 
                                     dark_image=logo_image,
-                                    size=(350, 80))  # Adjust size as needed
+                                    size=(350, 80))  #fixed megethos
 
         # Left Panel (Gold background)
         self.left_frame = ctk.CTkFrame(self, corner_radius=0, fg_color="#C8A165")
@@ -56,7 +58,7 @@ class LoginPage(ctk.CTkFrame):
 
         self.login_title = ctk.CTkLabel(
             self.right_center,
-            text="Enter your login details",
+            text="Organizer Login" if self.is_organizer else "User Login",
             text_color="black",
             font=ctk.CTkFont(family="Helvetica", size=25, weight="bold")
         )
@@ -64,7 +66,7 @@ class LoginPage(ctk.CTkFrame):
 
         self.login_subtitle = ctk.CTkLabel(
             self.right_center,
-            text="Enter the credentials that the admin gave you\nwhile signing up for the program",
+            text="Enter your organizer credentials" if self.is_organizer else "Enter your user credentials",
             text_color="black",
             font=ctk.CTkFont(family="Helvetica", size=18)
         )
@@ -106,12 +108,18 @@ class LoginPage(ctk.CTkFrame):
         self.login_button.pack(pady=(30, 0))
 
     def on_login_clicked(self):
-        """Handle the login logic here."""
+        """
+        # -- Diaxeirisi tis diadikasias login -- #
+        # -- To is_organizer kathorizei se poio dashboard tha ginei to redirect -- #
+        """
         username = self.username_entry.get()
         password = self.password_entry.get()
         
         if username and password:  # Basic validation
-            print(f"Login successful for user: {username}")
-            self.master.show_page(UserDashboard)
+            print(f"Login successful for {'organizer' if self.is_organizer else 'user'}: {username}")
+            if self.is_organizer:
+                self.master.show_page(OrganizerDashboard)
+            else:
+                self.master.show_page(UserDashboard)
         else:
             print("Please enter both username and password")

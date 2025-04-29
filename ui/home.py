@@ -11,7 +11,7 @@ class HomePage(ctk.CTkFrame):
         logo_image = Image.open(image_path)
         self.logo_ctk = ctk.CTkImage(light_image=logo_image, 
                                     dark_image=logo_image,
-                                    size=(350, 80))  # Adjust size as needed
+                                    size=(350, 80))  #fixed megethos
 
         # Left Panel (Gold background)
         self.left_frame = ctk.CTkFrame(self, corner_radius=0, fg_color="#C8A165")
@@ -21,10 +21,10 @@ class HomePage(ctk.CTkFrame):
         self.left_center = ctk.CTkFrame(self.left_frame, fg_color="transparent")
         self.left_center.place(relx=0.5, rely=0.5, anchor="center")
 
-        # Replace text label with image label
+        
         self.logo_label = ctk.CTkLabel(
             self.left_center,
-            text="",  # Empty text
+            text="",  
             image=self.logo_ctk
         )
         self.logo_label.pack(pady=10)
@@ -71,7 +71,7 @@ class HomePage(ctk.CTkFrame):
             width=300,
             height=40,
             corner_radius=8,
-            command=lambda: master.show_page(LoginPage)
+            command=lambda: master.show_page(LoginPage, is_organizer=False)
         )
         self.user_login_btn.pack(pady=10)
 
@@ -85,9 +85,9 @@ class HomePage(ctk.CTkFrame):
             width=300,
             height=40,
             corner_radius=8,
-            command=lambda: master.show_page(LoginPage)
+            command=lambda: master.show_page(LoginPage, is_organizer=True)
         )
         self.organiser_login_btn.pack(pady=10)
 
-# Import the login page (avoid circular imports)
+# Import the login page 
 from ui.login import LoginPage

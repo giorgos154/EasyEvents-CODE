@@ -285,5 +285,5 @@ class MyEventsPage(ctk.CTkFrame):
                 command=success.destroy
             ).pack(pady=20)
         
-        # Start progress in a separate thread
+        
         threading.Thread(target=update_progress).start()

@@ -256,7 +256,7 @@ class MyInvitesPage(ctk.CTkFrame):
         cancel_btn.pack(side="left", padx=10)
     
     def remove_invite(self):
-        # Re-render invites list (mock functionality)
+      
         for widget in self.invites_frame.winfo_children():
             widget.destroy()
         self.mock_invites.pop()
