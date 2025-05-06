@@ -1,0 +1,109 @@
+from src.db_connection import get_db_connection
+from datetime import datetime
+import qrcode
+
+class EventParticipation:
+    """
+    EventParticipation: Handles event participation, check-ins, and tickets
+    """
+    def __init__(self, event_id, user_id, status='registered'):
+        self.event_id = event_id
+        self.user_id = user_id
+        self.status = status
+
+    def check_in(self):
+        """Record check-in"""
+        conn = get_db_connection()
+        if not conn:
+            return False, "Database connection failed"
+
+        try:
+            cursor = conn.cursor()
+            query = """
+                UPDATE event_participations 
+                SET status = 'checkedIn'
+                WHERE event_id = %s AND user_id = %s
+                AND status = 'registered'
+            """
+            cursor.execute(query, (self.event_id, self.user_id))
+            conn.commit()
+            
+            if cursor.rowcount > 0:
+                return True, "Check-in successful"
+            return False, "Could not check in. Please verify registration."
+        except Exception as e:
+            return False, str(e)
+        finally:
+            cursor.close()
+            conn.close()
+
+    def register(self):
+        """Register for event"""
+        conn = get_db_connection()
+        if not conn:
+            return False, "Database connection failed"
+
+        try:
+            cursor = conn.cursor()
+            query = """
+                INSERT INTO event_participations 
+                (user_id, event_id, status)
+                VALUES (%s, %s, %s)
+            """
+            cursor.execute(query, (self.user_id, self.event_id, self.status))
+            conn.commit()
+            return True, "Successfully registered"
+        except Exception as e:
+            return False, str(e)
+        finally:
+            cursor.close()
+            conn.close()
+
+    @classmethod
+    def find_by_event_user(cls, event_id, user_id):
+        """Find participation record"""
+        conn = get_db_connection()
+        if not conn:
+            return None
+
+        try:
+            cursor = conn.cursor()
+            query = """
+                SELECT * FROM event_participations
+                WHERE event_id = %s AND user_id = %s
+            """
+            cursor.execute(query, (event_id, user_id))
+            result = cursor.fetchone()
+            if result:
+                return cls(
+                    event_id=result['event_id'],
+                    user_id=result['user_id'],
+                    status=result['status']
+                )
+            return None
+        finally:
+            cursor.close()
+            conn.close()
+
+    def generate_ticket(self):
+        """Generate QR code ticket"""
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data("https://github.com/giorgos154/EasyEvents-CODE")
+        qr.make(fit=True)
+        return qr.make_image(fill_color="black", back_color="white")
+
+    def get_ticket_info(self):
+        """Get ticket details"""
+        from src.classes.event.event import Event
+        from src.classes.member.member import Member
+        
+        event = Event.find_by_id(self.event_id)
+        attendee = Member.get_name_by_id(self.user_id)
+        return {
+            'event_title': event.title,
+            'event_date': event.event_date,
+            'venue': event.venue,
+            'attendee': attendee,
+            'check_in_time': datetime.now()
+
+        }

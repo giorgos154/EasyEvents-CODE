@@ -1,4 +1,4 @@
-from classes.member.member import User
+from classes.member.member import Member
 from tkinter import messagebox
 
 class Auth:
@@ -15,9 +15,9 @@ class Auth:
             return False
             
         # -- Elegxos an ta stoixeia einai sosta -- #
-        if User.verify_credentials(username, password, role):
+        if Member.verify_credentials(username, password, role):
             # -- An einai sosta, fortonoume ton user -- #
-            user = User.load_from_db(username)
+            user = Member.load_from_db(username)
             if user:
                 cls._current_user = user
                 return True

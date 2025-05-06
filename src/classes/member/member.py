@@ -2,7 +2,7 @@ from src.db_connection import get_db_connection
 from typing import Optional
 
 
-class User:
+class Member:
     def __init__(self, user_id, username, role):
        
         self.user_id = user_id
@@ -10,7 +10,7 @@ class User:
         self.role = role
 
     @staticmethod
-    def load_from_db(username: str) -> Optional["User"]:
+    def load_from_db(username: str) -> Optional["Member"]:
         conn = get_db_connection()
         if conn is None:
             return None
@@ -25,7 +25,7 @@ class User:
                 )
                 row = cursor.fetchone()
                 if row:
-                    return User(
+                    return Member(
                         user_id = row["user_id"],
                         username= row["username"],
                         role    = row["role"]

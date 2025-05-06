@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from classes.member.member import User
+from classes.member.member import Member
 from classes.services.payment_handler import PaymentHandler
 from classes.services.notification_service import NotificationService
 
@@ -78,7 +78,7 @@ class EventDetailsPage(ctk.CTkFrame):
             status = 'Joinable' if self.event.check_availability() else 'Full'
         
         # Get organizer name
-        organizer_name = User.get_name_by_id(self.event.organizer_id)
+        organizer_name = Member.get_name_by_id(self.event.organizer_id)
         
         details = [
             ("📅 Date", self.event.event_date.strftime('%Y-%m-%d %H:%M')),
@@ -371,8 +371,11 @@ class EventDetailsPage(ctk.CTkFrame):
     def finalize_registration(self, processing_dialog):
         processing_dialog.destroy()
         
-        # Register participant in database
-        if self.event.register_participant(self.dashboard.current_user.user_id):
+        # Register participant
+        from src.classes.event.eventParticipation import EventParticipation
+        participation = EventParticipation(self.event.event_id, self.dashboard.current_user.user_id)
+        success, message = participation.register()
+        if success:
             # Send confirmation email to participant
             NotificationService.send_confirmation_email(
                 self.dashboard.current_user.username,
@@ -382,7 +385,7 @@ class EventDetailsPage(ctk.CTkFrame):
             )
             
             # Get organizer's username and notify
-            organizer = User.get_name_by_id(self.event.organizer_id)
+            organizer = Member.get_name_by_id(self.event.organizer_id)
             NotificationService.notify_organizer(
                 organizer,
                 self.event.title,

@@ -288,7 +288,14 @@ class MyEventsPage(ctk.CTkFrame):
             time.sleep(2)
             
             # Record check-in
-            success, msg = event.check_in_participant(self.dashboard.current_user.user_id)
+            from src.classes.event.eventParticipation import EventParticipation
+            participation = EventParticipation.find_by_event_user(event.event_id, self.dashboard.current_user.user_id)
+            if not participation:
+                progress.destroy()
+                self.show_error("Not registered for this event")
+                return
+
+            success, msg = participation.check_in()
             if not success:
                 progress.destroy()
                 self.show_error(msg)
@@ -303,38 +310,105 @@ class MyEventsPage(ctk.CTkFrame):
             )
             
             progress.destroy()
-            
+
             # Show success window
-            success_win = ctk.CTkToplevel(self)
-            success_win.title("Success!")
-            success_win.geometry("400x150")
-            success_win.transient(self)
-            success_win.grab_set()
+            success = ctk.CTkToplevel(self)
+            success.title("Success!")
+            success.geometry("400x200")
+            success.transient(self)
+            success.grab_set()
             
             # Center window
-            success_win.update_idletasks()
-            x = (success_win.winfo_screenwidth() - success_win.winfo_width()) // 2
-            y = (success_win.winfo_screenheight() - success_win.winfo_height()) // 2
-            success_win.geometry(f"+{x}+{y}")
+            success.update_idletasks()
+            x = (success.winfo_screenwidth() - success.winfo_width()) // 2
+            y = (success.winfo_screenheight() - success.winfo_height()) // 2
+            success.geometry(f"+{x}+{y}")
             
             # Success message
-            ctk.CTkLabel(
-                success_win,
+            message = ctk.CTkLabel(
+                success,
                 text="You have successfully checked in to the event!",
                 font=ctk.CTkFont(family="Roboto", size=16)
-            ).pack(expand=True)
+            )
+            message.pack(expand=True)
             
-            # OK button
-            ctk.CTkButton(
-                success_win,
-                text="OK",
+            # View Ticket button
+            view_btn = ctk.CTkButton(
+                success,
+                text="View E-Ticket",
                 fg_color="#4CAF50",
                 hover_color="#45a049",
                 font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
-                command=success_win.destroy
-            ).pack(pady=20)
+                command=lambda: [
+                    success.destroy(), 
+                    self.show_ticket(event, participation)
+                ]
+            )
+            view_btn.pack(pady=20)
         
         threading.Thread(target=update_progress).start()
+
+    def show_ticket(self, event, participation):
+        """Display e-ticket with QR code"""
+        # Generate ticket info
+        qr_code = participation.generate_ticket()
+        ticket_info = participation.get_ticket_info()
+        if not qr_code or not ticket_info:
+            self.show_error("Could not generate ticket")
+            return
+
+        # Show ticket window
+        ticket_win = ctk.CTkToplevel(self)
+        ticket_win.title("E-Ticket")
+        ticket_win.geometry("400x600")
+        ticket_win.transient(self)
+        ticket_win.grab_set()
+        
+        # Center window
+        ticket_win.update_idletasks()
+        x = (ticket_win.winfo_screenwidth() - ticket_win.winfo_width()) // 2
+        y = (ticket_win.winfo_screenheight() - ticket_win.winfo_height()) // 2
+        ticket_win.geometry(f"+{x}+{y}")
+        
+        # Header
+        header = ctk.CTkLabel(
+            ticket_win,
+            text="Your E-Ticket",
+            font=ctk.CTkFont(family="Roboto", size=24, weight="bold")
+        )
+        header.pack(pady=20)
+        
+        # Event details
+        details = ctk.CTkLabel(
+            ticket_win,
+            text=f"Event: {ticket_info['event_title']}\n"
+                 f"Date: {ticket_info['event_date'].strftime('%Y-%m-%d %H:%M')}\n"
+                 f"Venue: {ticket_info['venue']}\n"
+                 f"Attendee: {ticket_info['attendee']}\n",
+            font=ctk.CTkFont(family="Roboto", size=14)
+        )
+        details.pack(pady=20)
+        
+        # QR Code
+        from PIL import ImageTk
+        qr_photo = ImageTk.PhotoImage(qr_code)
+        qr_label = ctk.CTkLabel(
+            ticket_win,
+            text="",  
+            image=qr_photo
+        )
+        qr_label.image = qr_photo 
+        qr_label.pack(pady=20)
+        
+        # Close button
+        ctk.CTkButton(
+            ticket_win,
+            text="Close",
+            fg_color="#4CAF50",
+            hover_color="#45a049",
+            font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
+            command=ticket_win.destroy
+        ).pack(pady=20)
 
     def show_error(self, message):
         """Display error message in a dialog"""

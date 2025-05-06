@@ -105,41 +105,6 @@ class Event:
 
         return current_count < self.max_participants
 
-    def register_participant(self, user_id):
-        """
-        register_participant: Kataxwrei enan neo symmetexonta gia auti tin ekdilwsi.
-        Prosthetai mia eggrafi ston pinaka event_participations.
-        Epistrefei True an i eggrafi egine epitixws, False an oxi (px, sfalma vasis).
-        """
-        conn = get_db_connection()
-        success = False
-        if not conn:
-            return False
-
-        try:
-            cursor = conn.cursor()
-            query = """
-                INSERT INTO event_participations (user_id, event_id, registration_date, status)
-                VALUES (%s, %s, %s, %s)
-            """
-            
-            status = 'registered' 
-            cursor.execute(query, (user_id, self.event_id, datetime.now(), status)) 
-            conn.commit() # Kanoume commit tis allages sti vasi
-            success = cursor.rowcount > 0 # Elegxoume an egine i eisagwgi (rowcount > 0)
-            if success:
-                print(f"User {user_id} registered successfully for event {self.event_id}")
-            else:
-                 print(f"Failed to register user {user_id} for event {self.event_id}. Rowcount: {cursor.rowcount}")
-
-        except pymysql.Error as e:
-            print(f"Database Error in Event.register_participant: {e}")
-            conn.rollback() # An ginei sfalma, kanoume rollback
-            success = False
-        finally:
-            cursor.close()
-            conn.close()
-        return success
 
     @classmethod
     def find_all_events(cls):
@@ -166,42 +131,6 @@ class Event:
             cursor.close()
             conn.close()
         return events
-
-    def check_in_participant(self, user_id):
-        """
-        check_in_participant: Updates participant status to 'checkedIn'
-        Args:
-            user_id (int): The ID of the participant
-        Returns:
-            tuple: (success, message)
-        """
-        conn = get_db_connection()
-        if not conn:
-            return False, "Database connection failed"
-
-        try:
-            cursor = conn.cursor()
-            query = """
-                UPDATE event_participations 
-                SET status = 'checkedIn'
-                WHERE event_id = %s AND user_id = %s
-                AND status = 'registered'
-            """
-            cursor.execute(query, (self.event_id, user_id))
-            conn.commit()
-            
-            if cursor.rowcount > 0:
-                print(f"[EVENT] User {user_id} checked in to event {self.event_id}")
-                return True, "Check-in successful"
-            else:
-                return False, "User already checked in or not registered"
-
-        except Exception as e:
-            print(f"Database Error in Event.check_in_participant: {e}")
-            return False, str(e)
-        finally:
-            cursor.close()
-            conn.close()
 
     @classmethod
     def find_user_events(cls, user_id):
