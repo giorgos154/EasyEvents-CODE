@@ -1,4 +1,5 @@
 import customtkinter as ctk
+from src.classes.event import Event
 
 class FindEventsPage(ctk.CTkFrame):
     def __init__(self, master, dashboard):
@@ -128,60 +129,27 @@ class FindEventsPage(ctk.CTkFrame):
         self.events_frame = ctk.CTkScrollableFrame(self, fg_color="white")
         self.events_frame.pack(fill="both", expand=True, padx=20, pady=20)
         
-        # Mock events data
-        self.mock_events = [
-            {
-                "title": "Tech Conference 2025",
-                "date": "2025-04-15 09:00",
-                "location": "Athens Convention Center",
-                "description": "Annual tech conference featuring industry leaders discussing latest innovations.",
-                "tags": ["Technology", "Conference"],
-                "price": "80€"
-            },
-            {
-                "title": "Summer Music Festival",
-                "date": "2025-06-20 18:00",
-                "location": "Thessaloniki Park",
-                "description": "A weekend of live music performances featuring both local and international artists.",
-                "tags": ["Music", "Festival"],
-                "price": "45€"
-            },
-            {
-                "title": "Art & Culture Expo",
-                "date": "2025-05-10 10:00",
-                "location": "Heraklion Art Museum",
-                "description": "Explore contemporary art exhibitions and participate in cultural workshops.",
-                "tags": ["Art", "Culture"],
-                "price": "25€"
-            },
-            {
-                "title": "Food & Wine Festival",
-                "date": "2025-07-01 12:00",
-                "location": "Patras Central Square",
-                "description": "Taste local cuisine and wines from various regions of Greece.",
-                "tags": ["Food", "Wine"],
-                "price": "35€"
-            }
-        ]
-        
-        # Display events
+        # Get and display events
         self.display_events()
     
     def display_events(self):
-        for event in self.mock_events:
+        # Fetch all events from database
+        events = Event.find_all_events()
+        for event in events:
             # Event Card
             card = ctk.CTkFrame(self.events_frame, fg_color="white", 
                                border_width=1, border_color="#E5E5E5")
             card.pack(fill="x", padx=10, pady=10)
             
             # Content Frame (left side)
-            content_frame = ctk.CTkFrame(card, fg_color="white")
+            content_frame = ctk.CTkFrame(card, fg_color="white", width=500)
+            content_frame.pack_propagate(False)  # Prevent resizing
             content_frame.pack(side="left", fill="both", expand=True, padx=10, pady=10)
             
             # Event Title
             title_label = ctk.CTkLabel(
                 content_frame,
-                text=event["title"],
+                text=event.title,
                 font=ctk.CTkFont(family="Roboto", size=18, weight="bold")
             )
             title_label.pack(anchor="w")
@@ -189,7 +157,7 @@ class FindEventsPage(ctk.CTkFrame):
             # Date & Time
             dt_label = ctk.CTkLabel(
                 content_frame,
-                text=f"Date & Time: {event['date']}",
+                text=f"Date & Time: {event.event_date.strftime('%Y-%m-%d %H:%M')}",
                 font=ctk.CTkFont(family="Roboto", size=14)
             )
             dt_label.pack(anchor="w", pady=(5,0))
@@ -197,7 +165,7 @@ class FindEventsPage(ctk.CTkFrame):
             # Location
             loc_label = ctk.CTkLabel(
                 content_frame,
-                text=f"Location: {event['location']}",
+                text=f"Location: {event.venue}",
                 font=ctk.CTkFont(family="Roboto", size=14)
             )
             loc_label.pack(anchor="w", pady=(5,0))
@@ -205,9 +173,9 @@ class FindEventsPage(ctk.CTkFrame):
             # Description
             desc_label = ctk.CTkLabel(
                 content_frame,
-                text=event["description"],
+                text=event.description,
                 font=ctk.CTkFont(family="Roboto", size=14),
-                wraplength=600,
+                wraplength=500,
                 justify="left"
             )
             desc_label.pack(anchor="w", pady=(5,0))
@@ -216,30 +184,37 @@ class FindEventsPage(ctk.CTkFrame):
             tags_frame = ctk.CTkFrame(content_frame, fg_color="white")
             tags_frame.pack(anchor="w", pady=(10,0))
             
-            for tag in event["tags"]:
-                tag_label = ctk.CTkLabel(
-                    tags_frame,
-                    text=tag,
-                    font=ctk.CTkFont(family="Roboto", size=12),
-                    fg_color="#E5E5E5",
-                    corner_radius=12,
-                    padx=10,
-                    pady=5
-                )
-                tag_label.pack(side="left", padx=5)
+            # Show category as tag
+            tag_label = ctk.CTkLabel(
+                tags_frame,
+                text=event.category,
+                font=ctk.CTkFont(family="Roboto", size=12),
+                fg_color="#E5E5E5",
+                corner_radius=12,
+                padx=10,
+                pady=5
+            )
+            tag_label.pack(side="left", padx=5)
             
             # Buttons Frame (right side)
-            buttons_frame = ctk.CTkFrame(card, fg_color="white")
+            buttons_frame = ctk.CTkFrame(card, fg_color="white", width=150)
+            buttons_frame.pack_propagate(False) 
             buttons_frame.pack(side="right", padx=10, pady=10)
             
+           
+            buttons_frame.grid_columnconfigure(0, weight=1)  
+            buttons_frame.grid_rowconfigure((0, 1, 2), weight=1)  
+            
             # Price Label
+            # Format price display
+            price_text = f"€{event.cost:.2f}" if event.is_paid else "Free"
             price_label = ctk.CTkLabel(
                 buttons_frame,
-                text=event["price"],
+                text=price_text,
                 font=ctk.CTkFont(family="Roboto", size=24, weight="bold"),
                 text_color="#C8A165"
             )
-            price_label.pack(pady=(0,10))
+            price_label.grid(row=1, column=0, pady=(10,10))
             
             # Details button
             details_btn = ctk.CTkButton(
@@ -252,6 +227,6 @@ class FindEventsPage(ctk.CTkFrame):
                 height=35,
                 corner_radius=8,
                 text_color="black",
-                command=lambda e=event: self.dashboard.show_event_details(e)
+                command=lambda eid=event.event_id: self.dashboard.show_event_details(eid)
             )
-            details_btn.pack()
+            details_btn.grid(row=2, column=0, pady=(0,10))

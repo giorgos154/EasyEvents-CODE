@@ -1,3 +1,5 @@
+# -- Imports -- #
+from ui.login import LoginPage  # Import moved to top
 import customtkinter as ctk
 from PIL import Image
 import os
@@ -6,22 +8,22 @@ class HomePage(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
 
-        # Load the logo image
+        # -- Fortosi tou logo -- #
         image_path = os.path.join("assets", "logo_transparent.png")
         logo_image = Image.open(image_path)
         self.logo_ctk = ctk.CTkImage(light_image=logo_image, 
                                     dark_image=logo_image,
                                     size=(350, 80))  #fixed megethos
 
-        # Left Panel (Gold background)
+        # -- Left Panel (Gold xroma) -- #
         self.left_frame = ctk.CTkFrame(self, corner_radius=0, fg_color="#C8A165")
         self.left_frame.pack(side="left", fill="both", expand=True)
 
-        # Center frame for left content
+        # --  frame gia left content -- #
         self.left_center = ctk.CTkFrame(self.left_frame, fg_color="transparent")
         self.left_center.place(relx=0.5, rely=0.5, anchor="center")
 
-        
+        # -- Logo -- #
         self.logo_label = ctk.CTkLabel(
             self.left_center,
             text="",  
@@ -45,11 +47,11 @@ class HomePage(ctk.CTkFrame):
         )
         self.copyright_label.pack(side="bottom", pady=20)
 
-        # Right Panel (White background)
+        # -- Right Panel (White background) -- #
         self.right_frame = ctk.CTkFrame(self, corner_radius=0, fg_color="white")
         self.right_frame.pack(side="right", fill="both", expand=True)
 
-        # Center frame for right content
+        # --  frame gia right content -- #
         self.right_center = ctk.CTkFrame(self.right_frame, fg_color="transparent")
         self.right_center.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -88,6 +90,3 @@ class HomePage(ctk.CTkFrame):
             command=lambda: master.show_page(LoginPage, is_organizer=True)
         )
         self.organiser_login_btn.pack(pady=10)
-
-# Import the login page 
-from ui.login import LoginPage

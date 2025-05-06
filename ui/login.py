@@ -1,13 +1,14 @@
-from ui.user.dashboard import UserDashboard
-from ui.Organizer.dashboard import OrganizerDashboard
 import customtkinter as ctk
 from PIL import Image
 import os
+from tkinter import messagebox
+from src.auth import Auth
 
 class LoginPage(ctk.CTkFrame):
     def __init__(self, master, is_organizer=False):
         super().__init__(master)
         self.is_organizer = is_organizer
+        self.master = master  
 
         # -- Fortosi tou logo -- #
         image_path = os.path.join("assets", "logo_transparent.png")
@@ -16,18 +17,18 @@ class LoginPage(ctk.CTkFrame):
                                     dark_image=logo_image,
                                     size=(350, 80))  #fixed megethos
 
-        # Left Panel (Gold background)
+        # -- Left Panel (Gold xroma) -- #
         self.left_frame = ctk.CTkFrame(self, corner_radius=0, fg_color="#C8A165")
         self.left_frame.pack(side="left", fill="both", expand=True)
 
-        # Center frame for left content
+        # --  frame gia left content -- #
         self.left_center = ctk.CTkFrame(self.left_frame, fg_color="transparent")
         self.left_center.place(relx=0.5, rely=0.5, anchor="center")
 
-        # Replace text label with image label
+        # -- Logo -- #
         self.logo_label = ctk.CTkLabel(
             self.left_center,
-            text="",  # Empty text
+            text="",  
             image=self.logo_ctk
         )
         self.logo_label.pack(pady=10)
@@ -48,11 +49,11 @@ class LoginPage(ctk.CTkFrame):
         )
         self.copyright_label.pack(side="bottom", pady=20)
 
-        # Right Panel (White background)
+        # -- Right Panel (White background) -- #
         self.right_frame = ctk.CTkFrame(self, corner_radius=0, fg_color="white")
         self.right_frame.pack(side="right", fill="both", expand=True)
 
-        # Center frame for right content
+        # --  frame gia right content -- #
         self.right_center = ctk.CTkFrame(self.right_frame, fg_color="transparent")
         self.right_center.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -108,18 +109,23 @@ class LoginPage(ctk.CTkFrame):
         self.login_button.pack(pady=(30, 0))
 
     def on_login_clicked(self):
-        """
-        # -- Diaxeirisi tis diadikasias login -- #
-        # -- To is_organizer kathorizei se poio dashboard tha ginei to redirect -- #
-        """
+     
+        from ui.user.dashboard import UserDashboard
+        from ui.Organizer.dashboard import OrganizerDashboard
+
         username = self.username_entry.get()
         password = self.password_entry.get()
-        
-        if username and password:  # Basic validation
-            print(f"Login successful for {'organizer' if self.is_organizer else 'user'}: {username}")
+
+        # Attempt login
+        if Auth.login(username, password, self.is_organizer):
+            # Remove login page
+            self.pack_forget()
+
+            # Show the appropriate dashboard
             if self.is_organizer:
-                self.master.show_page(OrganizerDashboard)
+                dash = OrganizerDashboard(self.master)
             else:
-                self.master.show_page(UserDashboard)
-        else:
-            print("Please enter both username and password")
+                dash = UserDashboard(self.master)
+
+            dash.pack(fill="both", expand=True)
+

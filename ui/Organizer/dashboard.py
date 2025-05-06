@@ -125,4 +125,7 @@ class OrganizerDashboard(ctk.CTkFrame):
 
     def logout(self):
         """Diaxeirisi tis diadikasias logout"""
-        print("Logging out...")
+        from src.auth import Auth  # Import here to avoid circular imports
+        Auth.logout()
+        from ui.home import HomePage  # Import here to avoid circular imports
+        self.master.show_page(HomePage)

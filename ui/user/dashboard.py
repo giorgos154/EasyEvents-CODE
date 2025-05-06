@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from PIL import Image
 import os
+from src.auth import Auth
 from ui.user.findevents import FindEventsPage
 from ui.user.myevents import MyEventsPage
 from ui.user.myprofile import MyProfilePage
@@ -15,6 +16,9 @@ from ui.user.my_invites import MyInvitesPage
 class UserDashboard(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
+        self.current_user = Auth.get_current_user()  # Store current user
+        if not self.current_user:
+            raise ValueError("No authenticated user found")
         self.current_page = None
         self.last_page = None  # Track last main page for back navigation
 
@@ -61,6 +65,18 @@ class UserDashboard(ctk.CTkFrame):
             )
             btn.pack(pady=5, padx=10, fill="x")
             self.menu_buttons.append(btn)
+
+        # Username display
+        self.username_label = ctk.CTkLabel(
+            self.sidebar,
+            text=f"👤 {self.current_user.username}",
+            fg_color="#96753d",
+            text_color="white",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            corner_radius=6,
+            height=32
+        )
+        self.username_label.pack(side="bottom", pady=(0, 10), padx=10, fill="x")
 
         # Logout button at bottom
         self.logout_btn = ctk.CTkButton(
@@ -179,4 +195,7 @@ class UserDashboard(ctk.CTkFrame):
 
     def logout(self):
         """Handle logout logic"""
-        print("Logging out...")
+        from src.auth import Auth  
+        Auth.logout()
+        from ui.home import HomePage 
+        self.master.show_page(HomePage)
