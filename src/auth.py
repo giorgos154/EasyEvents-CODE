@@ -1,4 +1,4 @@
-from src.classes.user import User
+from classes.member.member import User
 from tkinter import messagebox
 
 class Auth:

@@ -2,7 +2,7 @@ import customtkinter as ctk
 from datetime import datetime
 import time
 import threading
-from src.classes.event import Event
+from src.classes.event.event import Event
 
 class MyEventsPage(ctk.CTkFrame):
     def __init__(self, master, dashboard):
@@ -178,6 +178,17 @@ class MyEventsPage(ctk.CTkFrame):
         cancel_btn.pack(side="left", padx=10)
     
     def show_checkin_sequence(self, event):
+        # Check if event is happening today
+        today = datetime.now().date()
+        event_date = event.event_date.date()
+
+        if event_date > today:
+            self.show_error("Check-in is not available before the event date.")
+            return
+        elif event_date < today:
+            self.show_error("This event has already passed.")
+            return
+
         # Location permission window
         perm = ctk.CTkToplevel(self)
         perm.title("Location Access")
@@ -199,18 +210,38 @@ class MyEventsPage(ctk.CTkFrame):
         )
         message.pack(expand=True)
         
+        # Buttons frame
+        btn_frame = ctk.CTkFrame(perm, fg_color="transparent")
+        btn_frame.pack(pady=20)
+
         # Grant access button
         grant_btn = ctk.CTkButton(
-            perm,
+            btn_frame,
             text="Grant Access",
             fg_color="#2196F3",
             hover_color="#1976D2",
             font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
-            command=lambda: [perm.destroy(), self.start_checkin_progress()]
+            width=120,
+            command=lambda: [perm.destroy(), self.start_checkin_progress(event)]
         )
-        grant_btn.pack(pady=20)
+        grant_btn.pack(side="left", padx=10)
+
+        # Deny button
+        deny_btn = ctk.CTkButton(
+            btn_frame,
+            text="Deny",
+            fg_color="gray",
+            hover_color="#666666",
+            font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
+            width=100,
+            command=lambda: [perm.destroy(), 
+                           self.show_error("Location access is required to record check-in.")]
+        )
+        deny_btn.pack(side="left", padx=10)
     
-    def start_checkin_progress(self):
+    def start_checkin_progress(self, event):
+        from src.classes.services.location_service import LocationService
+
         # Progress window
         progress = ctk.CTkToplevel(self)
         progress.title("Checking In...")
@@ -233,48 +264,110 @@ class MyEventsPage(ctk.CTkFrame):
         progress_label.pack(expand=True)
         
         def update_progress():
-            messages = [
-                ("Checking location...", 1),
-                ("Within event bounds...", 1),
-                ("Event Date correct...", 1),
-                ("Checked in successfully! Enjoy your event!", 2)
-            ]
+            # Get user location
+            user_location = LocationService.get_current_location()
+            progress_label.configure(text="Checking your location...")
+            progress.update()
+            time.sleep(1)
             
-            for msg, delay in messages:
-                progress_label.configure(text=msg)
-                progress.update()
-                time.sleep(delay)
+            # Get venue location
+            venue_location = LocationService.get_venue_coordinates(event.venue)
+            progress_label.configure(text="Verifying proximity to venue...")
+            progress.update()
+            time.sleep(2)
+            
+            # Verify location
+            is_valid, msg = LocationService.verify_in_radius(user_location, venue_location)
+            if not is_valid:
+                progress.destroy()
+                self.show_error(msg)
+                return
+                
+            progress_label.configure(text="Processing check-in...")
+            progress.update()
+            time.sleep(2)
+            
+            # Record check-in
+            success, msg = event.check_in_participant(self.dashboard.current_user.user_id)
+            if not success:
+                progress.destroy()
+                self.show_error(msg)
+                return
+            
+            # Notify organizer
+            from src.classes.services.notification_service import NotificationService
+            NotificationService.notify_check_in(
+                event.organizer_id,
+                event.title,
+                self.dashboard.current_user.username
+            )
             
             progress.destroy()
             
             # Show success window
-            success = ctk.CTkToplevel(self)
-            success.title("Success!")
-            success.geometry("400x150")
-            success.transient(self)
-            success.grab_set()
+            success_win = ctk.CTkToplevel(self)
+            success_win.title("Success!")
+            success_win.geometry("400x150")
+            success_win.transient(self)
+            success_win.grab_set()
             
             # Center window
-            success.update_idletasks()
-            x = (success.winfo_screenwidth() - success.winfo_width()) // 2
-            y = (success.winfo_screenheight() - success.winfo_height()) // 2
-            success.geometry(f"+{x}+{y}")
+            success_win.update_idletasks()
+            x = (success_win.winfo_screenwidth() - success_win.winfo_width()) // 2
+            y = (success_win.winfo_screenheight() - success_win.winfo_height()) // 2
+            success_win.geometry(f"+{x}+{y}")
             
             # Success message
             ctk.CTkLabel(
-                success,
+                success_win,
                 text="You have successfully checked in to the event!",
                 font=ctk.CTkFont(family="Roboto", size=16)
             ).pack(expand=True)
             
             # OK button
             ctk.CTkButton(
-                success,
+                success_win,
                 text="OK",
                 fg_color="#4CAF50",
                 hover_color="#45a049",
                 font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
-                command=success.destroy
+                command=success_win.destroy
             ).pack(pady=20)
         
         threading.Thread(target=update_progress).start()
+
+    def show_error(self, message):
+        """Display error message in a dialog"""
+        error = ctk.CTkToplevel(self)
+        error.title("Error")
+        error.geometry("300x150")
+        error.transient(self)
+        error.grab_set()
+        
+        # Center window
+        error.update_idletasks()
+        x = (error.winfo_screenwidth() - error.winfo_width()) // 2
+        y = (error.winfo_screenheight() - error.winfo_height()) // 2
+        error.geometry(f"+{x}+{y}")
+        
+        # Error message
+        message_label = ctk.CTkLabel(
+            error,
+            text=message,
+            font=ctk.CTkFont(family="Roboto", size=14),
+            text_color="red",
+            justify="center"
+        )
+        message_label.pack(expand=True)
+        
+        # OK button
+        ok_btn = ctk.CTkButton(
+            error,
+            text="OK",
+            fg_color="gray",
+            hover_color="#666666",
+            font=ctk.CTkFont(family="Roboto", size=14),
+            width=100,
+            command=error.destroy
+        )
+        ok_btn.pack(pady=20)

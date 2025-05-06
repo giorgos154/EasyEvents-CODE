@@ -1,4 +1,5 @@
 # notification_service.py
+from datetime import datetime
 class NotificationService:
     """
     NotificationService: Klasi gia tin apostoli eidopoiisewn. ta kanoume sto console
@@ -33,3 +34,18 @@ class NotificationService:
         print(f"Please check your event dashboard for more details.")
         print("-" * 50)
 
+    @staticmethod
+    def notify_check_in(organizer_email, event_title, attendee_name):
+        """
+        Prosomiwsi eidopoiisis diorganwti gia check-in symmetexonta.
+        """
+        print("\n[EMAIL SIMULATION] Check-in Notification")
+        print("-" * 50)
+        print(f"To: {organizer_email}")
+        print(f"Subject: Check-in at {event_title}")
+        print(f"Body:")
+        print(f"Hello,")
+        print(f"{attendee_name} has checked in to your event!")
+        print(f"Event: {event_title}")
+        print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print("-" * 50)

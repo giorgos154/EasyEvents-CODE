@@ -167,6 +167,42 @@ class Event:
             conn.close()
         return events
 
+    def check_in_participant(self, user_id):
+        """
+        check_in_participant: Updates participant status to 'checkedIn'
+        Args:
+            user_id (int): The ID of the participant
+        Returns:
+            tuple: (success, message)
+        """
+        conn = get_db_connection()
+        if not conn:
+            return False, "Database connection failed"
+
+        try:
+            cursor = conn.cursor()
+            query = """
+                UPDATE event_participations 
+                SET status = 'checkedIn'
+                WHERE event_id = %s AND user_id = %s
+                AND status = 'registered'
+            """
+            cursor.execute(query, (self.event_id, user_id))
+            conn.commit()
+            
+            if cursor.rowcount > 0:
+                print(f"[EVENT] User {user_id} checked in to event {self.event_id}")
+                return True, "Check-in successful"
+            else:
+                return False, "User already checked in or not registered"
+
+        except Exception as e:
+            print(f"Database Error in Event.check_in_participant: {e}")
+            return False, str(e)
+        finally:
+            cursor.close()
+            conn.close()
+
     @classmethod
     def find_user_events(cls, user_id):
         """

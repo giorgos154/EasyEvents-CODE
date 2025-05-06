@@ -1,14 +1,14 @@
 import customtkinter as ctk
-from src.classes.user import User
-from src.classes.payment_handler import PaymentHandler
-from src.classes.notification_service import NotificationService
+from classes.member.member import User
+from classes.services.payment_handler import PaymentHandler
+from classes.services.notification_service import NotificationService
 
 class EventDetailsPage(ctk.CTkFrame):
     def __init__(self, master, dashboard, event_id):
         super().__init__(master, fg_color="white")
         self.dashboard = dashboard
         # Fetch event details from database
-        from src.classes.event import Event  
+        from classes.event.event import Event  
         self.event = Event.find_by_id(event_id)
         if not self.event:
             # Show error if event not found

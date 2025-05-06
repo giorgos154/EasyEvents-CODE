@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from src.classes.event import Event
+from classes.event.event import Event
 
 class FindEventsPage(ctk.CTkFrame):
     def __init__(self, master, dashboard):
