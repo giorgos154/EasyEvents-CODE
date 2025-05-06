@@ -167,4 +167,35 @@ class Event:
             conn.close()
         return events
 
+    @classmethod
+    def find_user_events(cls, user_id):
+        """
+        find_user_events (Class Method): Epistrefei ola ta events pou symmetexei o xristis
+        """
+        conn = get_db_connection()
+        events = []
+        if not conn:
+            print("No database connection")
+            return events
 
+        try:
+            cursor = conn.cursor()
+            query = """
+                SELECT e.*
+                FROM events e
+                JOIN event_participations ep ON e.event_id = ep.event_id
+                WHERE ep.user_id = %s AND ep.status != 'withdrawn'
+                AND DATE(e.event_date) >= CURDATE()
+                ORDER BY e.event_date ASC
+            """
+            cursor.execute(query, (user_id,))
+            results = cursor.fetchall()
+            for event_data in results:
+                event = cls(**event_data)
+                events.append(event)
+        except pymysql.Error as e:
+            print(f"Database Error in Event.find_user_events: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+        return events

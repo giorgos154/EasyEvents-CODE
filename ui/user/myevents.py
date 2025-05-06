@@ -2,6 +2,7 @@ import customtkinter as ctk
 from datetime import datetime
 import time
 import threading
+from src.classes.event import Event
 
 class MyEventsPage(ctk.CTkFrame):
     def __init__(self, master, dashboard):
@@ -17,34 +18,24 @@ class MyEventsPage(ctk.CTkFrame):
         self.events_frame = ctk.CTkScrollableFrame(self, fg_color="white")
         self.events_frame.pack(fill="both", expand=True, padx=20, pady=20)
         
-        # Mock events data
-        self.mock_events = [
-            {
-                "id": 1,
-                "title": "Tech Conference 2025",
-                "date": "2025-04-15 09:00",
-                "location": "Athens Convention Center",
-                "description": "Annual tech conference featuring industry leaders."
-            },
-            {
-                "title": "Summer Music Festival",
-                "date": "2025-06-20 18:00",
-                "location": "Thessaloniki Park",
-                "description": "Enjoy live performances from top artists."
-            },
-            {
-                "title": "Art & Culture Expo",
-                "date": "2025-05-10 10:00",
-                "location": "Heraklion Art Museum",
-                "description": "Explore modern art exhibitions and workshops."
-            }
-        ]
+        # Get user's events
+        self.events = Event.find_user_events(self.dashboard.current_user.user_id)
         
         # Display events
-        self.display_events()
+        if not self.events:
+            # Show message if no events
+            no_events = ctk.CTkLabel(
+                self.events_frame,
+                text="You haven't joined any events yet.\nCheck Find Events to discover and join events!",
+                font=ctk.CTkFont(family="Roboto", size=16),
+                justify="center"
+            )
+            no_events.pack(expand=True, pady=50)
+        else:
+            self.display_events()
     
     def display_events(self):
-        for event in self.mock_events:
+        for event in self.events:
             # Event Card
             card = ctk.CTkFrame(self.events_frame, fg_color="white", 
                                border_width=1, border_color="#C8A165")
@@ -57,7 +48,7 @@ class MyEventsPage(ctk.CTkFrame):
             # Event Title
             title_label = ctk.CTkLabel(
                 content_frame,
-                text=event["title"],
+                text=event.title,
                 font=ctk.CTkFont(family="Roboto", size=18, weight="bold")
             )
             title_label.pack(anchor="w")
@@ -65,7 +56,7 @@ class MyEventsPage(ctk.CTkFrame):
             # Date & Time
             dt_label = ctk.CTkLabel(
                 content_frame,
-                text=f"Date & Time: {event['date']}",
+                text=f"Date & Time: {event.event_date.strftime('%Y-%m-%d %H:%M')}",
                 font=ctk.CTkFont(family="Roboto", size=14)
             )
             dt_label.pack(anchor="w", pady=(5,0))
@@ -73,7 +64,7 @@ class MyEventsPage(ctk.CTkFrame):
             # Location
             loc_label = ctk.CTkLabel(
                 content_frame,
-                text=f"Location: {event['location']}",
+                text=f"Location: {event.venue}",
                 font=ctk.CTkFont(family="Roboto", size=14)
             )
             loc_label.pack(anchor="w", pady=(5,0))
@@ -81,8 +72,9 @@ class MyEventsPage(ctk.CTkFrame):
             # Description
             desc_label = ctk.CTkLabel(
                 content_frame,
-                text=event["description"],
-                font=ctk.CTkFont(family="Roboto", size=14)
+                text=event.description,
+                font=ctk.CTkFont(family="Roboto", size=14),
+                wraplength=500
             )
             desc_label.pack(anchor="w", pady=(5,0))
             
@@ -101,7 +93,7 @@ class MyEventsPage(ctk.CTkFrame):
                 height=35,
                 corner_radius=8,
                 text_color="black",
-                command=lambda e=event: self.dashboard.show_event_discussion(e)
+                command=lambda e=event: self.dashboard.show_event_discussion(e.event_id)
             )
             discussion_btn.pack(pady=(0,5))
             
@@ -169,7 +161,7 @@ class MyEventsPage(ctk.CTkFrame):
             hover_color="#e53935",
             font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
             width=100,
-            command=lambda: [print(f"Withdrawing from {event['title']}"), warning.destroy()]
+            command=lambda: [print(f"Withdrawing from {event.title}"), warning.destroy()]
         )
         confirm_btn.pack(side="left", padx=10)
         
@@ -284,6 +276,5 @@ class MyEventsPage(ctk.CTkFrame):
                 font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
                 command=success.destroy
             ).pack(pady=20)
-        
         
         threading.Thread(target=update_progress).start()
