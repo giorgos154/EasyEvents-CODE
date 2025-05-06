@@ -234,142 +234,14 @@ class EventDetailsPage(ctk.CTkFrame):
             self.show_error("Sorry, the event is now full.")
     
     def show_payment_dialog(self):
-        # Payment dialog
-        payment = ctk.CTkToplevel(self)
-        payment.title("Payment Details")
-        payment.geometry("400x500")
-        payment.transient(self)
-        payment.grab_set()
-        
-        # Center dialog
-        payment.update_idletasks()
-        x = (payment.winfo_screenwidth() - payment.winfo_width()) // 2
-        y = (payment.winfo_screenheight() - payment.winfo_height()) // 2
-        payment.geometry(f"+{x}+{y}")
-        
-        # Event details
-        title_label = ctk.CTkLabel(
-            payment,
-            text=self.event.title,
-            font=ctk.CTkFont(family="Roboto", size=18, weight="bold")
+        # Show payment dialog and process payment
+        PaymentHandler.show_payment_dialog(
+            parent=self,
+            event=self.event,
+            on_success=self.finalize_registration
         )
-        title_label.pack(pady=(20,5))
-        
-        date_label = ctk.CTkLabel(
-            payment,
-            text=self.event.event_date.strftime('%Y-%m-%d %H:%M'),
-            font=ctk.CTkFont(family="Roboto", size=14)
-        )
-        date_label.pack(pady=5)
-        
-        price_label = ctk.CTkLabel(
-            payment,
-            text=f"Amount to pay: {self.cost_text}",
-            font=ctk.CTkFont(family="Roboto", size=16, weight="bold")
-        )
-        price_label.pack(pady=(5,20))
-        
-        # Payment form
-        form_frame = ctk.CTkFrame(payment, fg_color="transparent")
-        form_frame.pack(fill="x", padx=20)
-        
-        # Card number
-        ctk.CTkLabel(form_frame, text="Card Number:", anchor="w").pack(fill="x", pady=(0,5))
-        card_number = ctk.CTkEntry(form_frame, placeholder_text="1234 5678 9012 3456")
-        card_number.pack(fill="x", pady=(0,10))
-        
-        # Cardholder name
-        ctk.CTkLabel(form_frame, text="Cardholder Name:", anchor="w").pack(fill="x", pady=(0,5))
-        cardholder = ctk.CTkEntry(form_frame, placeholder_text="JOHN DOE")
-        cardholder.pack(fill="x", pady=(0,10))
-        
-        # CVV and Expiry Date frame
-        card_details = ctk.CTkFrame(form_frame, fg_color="transparent")
-        card_details.pack(fill="x")
-        
-        # CVV
-        cvv_frame = ctk.CTkFrame(card_details, fg_color="transparent")
-        cvv_frame.pack(side="left", fill="x", expand=True, padx=(0,5))
-        ctk.CTkLabel(cvv_frame, text="CVV:", anchor="w").pack(fill="x", pady=(0,5))
-        cvv = ctk.CTkEntry(cvv_frame, placeholder_text="123", width=70)
-        cvv.pack(side="left")
-        
-        # Expiry date
-        exp_frame = ctk.CTkFrame(card_details, fg_color="transparent")
-        exp_frame.pack(side="left", fill="x", expand=True, padx=5)
-        ctk.CTkLabel(exp_frame, text="Expiry Date:", anchor="w").pack(fill="x", pady=(0,5))
-        expiry = ctk.CTkEntry(exp_frame, placeholder_text="MM/YY", width=70)
-        expiry.pack(side="left")
-        
-        # Buttons
-        btn_frame = ctk.CTkFrame(payment, fg_color="transparent")
-        btn_frame.pack(side="bottom", pady=20)
-        
-        def process_payment():
-            # Basic validation
-            if not all([card_number.get(), cardholder.get(), cvv.get(), expiry.get()]):
-                self.show_error("Please fill in all fields")
-                return
-            
-            if not PaymentHandler.validate_card_info(card_number.get(), cvv.get(), expiry.get()):
-                self.show_error("Invalid card information")
-                return
-            
-            payment.destroy()
-            self.show_processing_payment()
-        
-        # Pay button
-        pay_btn = ctk.CTkButton(
-            btn_frame,
-            text="Pay",
-            fg_color="#4CAF50",
-            hover_color="#45a049",
-            font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
-            width=100,
-            command=process_payment
-        )
-        pay_btn.pack(side="left", padx=10)
-        
-        # Cancel button
-        cancel_btn = ctk.CTkButton(
-            btn_frame,
-            text="Cancel",
-            fg_color="gray",
-            hover_color="#666666",
-            font=ctk.CTkFont(family="Roboto", size=14),
-            width=100,
-            command=payment.destroy
-        )
-        cancel_btn.pack(side="left", padx=10)
     
-    def show_processing_payment(self):
-        # Processing dialog
-        processing = ctk.CTkToplevel(self)
-        processing.title("Processing Payment")
-        processing.geometry("300x150")
-        processing.transient(self)
-        processing.grab_set()
-        
-        # Center dialog
-        processing.update_idletasks()
-        x = (processing.winfo_screenwidth() - processing.winfo_width()) // 2
-        y = (processing.winfo_screenheight() - processing.winfo_height()) // 2
-        processing.geometry(f"+{x}+{y}")
-        
-        # Message
-        message = ctk.CTkLabel(
-            processing,
-            text="Processing payment...\nPlease wait",
-            font=ctk.CTkFont(family="Roboto", size=14),
-            justify="center"
-        )
-        message.pack(expand=True)
-        
-        # Simulate payment processing
-        self.after(2000, lambda: self.finalize_registration(processing))
-    
-    def finalize_registration(self, processing_dialog):
-        processing_dialog.destroy()
+    def finalize_registration(self):
         
         # Register participant
         from src.classes.event.eventParticipation import EventParticipation
