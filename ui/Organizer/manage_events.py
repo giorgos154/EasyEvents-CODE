@@ -47,58 +47,45 @@ class ManageEventsPage(ctk.CTkFrame):
         self.events_frame = ctk.CTkScrollableFrame(self, fg_color="white")
         self.events_frame.pack(fill="both", expand=True, padx=20, pady=(10, 0))
         
-        # -- Mock Events Data -- #
-        self.mock_events = [
-            {
-                "title": "Tech Conference 2025",
-                "date": "2025-04-15 09:00",
-                "location": "Athens Convention Center",
-                "description": "Annual tech conference featuring industry leaders and innovators.",
-                "participants": 150,
-                "capacity": 200,
-                "ticket_price": "€50"
-            },
-            {
-                "title": "Summer Music Festival",
-                "date": "2025-06-20 18:00",
-                "location": "Thessaloniki Park",
-                "description": "A day of live music performances, food, and entertainment.",
-                "participants": 500,
-                "capacity": 1000,
-                "ticket_price": "€25"
-            },
-            {
-                "title": "Art & Culture Expo",
-                "date": "2025-05-10 10:00",
-                "location": "Heraklion Art Museum",
-                "description": "Showcase of local and international artists featuring workshops.",
-                "participants": 200,
-                "capacity": 300,
-                "ticket_price": "€15"
-            }
-        ]
+        # Get organizer's events
+        from src.classes.event.event import Event
+        self.events = Event.find_organizer_events(self.dashboard.current_user.user_id)
         
-        # -- Display Events -- #
-        self.display_events()
+        # Display events
+        if not self.events:
+            # Show message if no events
+            no_events = ctk.CTkLabel(
+                self.events_frame,
+                text="You haven't created any events yet.\nUse the button above to create your first event!",
+                font=ctk.CTkFont(family="Roboto", size=16),
+                justify="center"
+            )
+            no_events.pack(expand=True, pady=50)
+        else:
+            self.display_events()
 
     def display_events(self):
-        """
-        # -- Display event cards in the scrollable frame -- #
-        """
-        for event in self.mock_events:
+        """Display event cards in the scrollable frame"""
+        for event in self.events:
+            # Get current participants
+            current_participants = event.get_current_participant_count() or 0
+            capacity_text = f"{current_participants}/{event.max_participants}" if event.max_participants else str(current_participants)
+            
+            # Format ticket price
+            ticket_text = "Free" if not event.is_paid else f"€{event.cost:.2f}"
             # Event Card
             card = ctk.CTkFrame(self.events_frame, fg_color="white",
                                border_width=1, border_color="#C8A165")
             card.pack(fill="x", padx=10, pady=10)
             
             # Content Frame (left side)
-            content_frame = ctk.CTkFrame(card, fg_color="white")
-            content_frame.pack(side="left", fill="both", expand=True, padx=10, pady=10)
+            content_frame = ctk.CTkFrame(card, fg_color="white") 
+            content_frame.pack(side="left", fill="both", expand=True, padx=10, pady=10) 
             
             # Event Title
             title_label = ctk.CTkLabel(
                 content_frame,
-                text=event["title"],
+                text=event.title,
                 font=ctk.CTkFont(family="Roboto", size=18, weight="bold"),
                 text_color="black"
             )
@@ -107,7 +94,7 @@ class ManageEventsPage(ctk.CTkFrame):
             # Date & Time
             dt_label = ctk.CTkLabel(
                 content_frame,
-                text=f"Date & Time: {event['date']}",
+                text=f"Date & Time: {event.event_date.strftime('%Y-%m-%d %H:%M')}",
                 font=ctk.CTkFont(family="Roboto", size=14),
                 text_color="black"
             )
@@ -116,7 +103,7 @@ class ManageEventsPage(ctk.CTkFrame):
             # Location
             loc_label = ctk.CTkLabel(
                 content_frame,
-                text=f"Location: {event['location']}",
+                text=f"Location: {event.venue}",
                 font=ctk.CTkFont(family="Roboto", size=14),
                 text_color="black"
             )
@@ -125,24 +112,39 @@ class ManageEventsPage(ctk.CTkFrame):
             # Description
             desc_label = ctk.CTkLabel(
                 content_frame,
-                text=event["description"],
+                text=event.description,
                 font=ctk.CTkFont(family="Roboto", size=14),
-                text_color="black"
+                text_color="black",
+                wraplength=500,
+                justify="left"
+
+
             )
             desc_label.pack(anchor="w", pady=(5,0))
             
-            # Participants
+            # Participants and Ticket info
             part_label = ctk.CTkLabel(
                 content_frame,
-                text=f"Participants: {event['participants']}/{event['capacity']} | Ticket: {event['ticket_price']}",
+                text=f"Participants: {capacity_text} | Ticket: {ticket_text}",
                 font=ctk.CTkFont(family="Roboto", size=14),
                 text_color="black"
             )
             part_label.pack(anchor="w", pady=(5,0))
             
+            # Status
+            status_label = ctk.CTkLabel(
+                content_frame,
+                text=f"Status: {event.status.title()}",
+                font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
+                text_color="#4CAF50" if event.status == 'scheduled' else 
+                          "#f44336" if event.status == 'cancelled' else "#666666"
+            )
+            status_label.pack(anchor="w", pady=(5,0))
+            
             # Buttons Frame (right side)
-            buttons_frame = ctk.CTkFrame(card, fg_color="white")
+            buttons_frame = ctk.CTkFrame(card, fg_color="white")  
             buttons_frame.pack(side="right", padx=10, pady=10)
+
             
             # Edit button
             edit_btn = ctk.CTkButton(
@@ -154,20 +156,23 @@ class ManageEventsPage(ctk.CTkFrame):
                 width=120,
                 height=35,
                 corner_radius=8,
-                text_color="black"
+                text_color="black",
+                state="normal" if event.status == 'scheduled' else "disabled"
             )
             edit_btn.pack(pady=(0,5))
             
             # Cancel button
+            cancel_text = "Cancelled" if event.status == 'cancelled' else "Cancel"
             cancel_btn = ctk.CTkButton(
                 buttons_frame,
-                text="Cancel ✕",
+                text=cancel_text + " ✕",
                 fg_color="#f44336",
                 hover_color="#e53935",
                 font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
                 width=120,
                 height=35,
-                corner_radius=8
+                corner_radius=8,
+                state="disabled" if event.status == 'cancelled' else "normal"
             )
             cancel_btn.pack(pady=5)
             
@@ -181,7 +186,8 @@ class ManageEventsPage(ctk.CTkFrame):
                 width=120,
                 height=35,
                 corner_radius=8,
-                text_color="black"
+                text_color="black",
+                command=lambda e=event: self.dashboard.show_event_discussion(e.event_id)
             )
             discussion_btn.pack(pady=5)
             
@@ -194,7 +200,9 @@ class ManageEventsPage(ctk.CTkFrame):
                 font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
                 width=120,
                 height=35,
-                corner_radius=8
+                corner_radius=8,
+                state="normal" if event.status == 'scheduled' else "disabled",
+                command=lambda e=event: self.dashboard.show_invite_friends(e)
             )
             invite_btn.pack(pady=(5,0))
     

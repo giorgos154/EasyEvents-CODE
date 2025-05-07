@@ -7,6 +7,11 @@ class OrganizerDashboard(ctk.CTkFrame):
     def __init__(self, master):
         # -- Dimiourgoume to vasiko frame tou dashboard -- #
         super().__init__(master)
+        
+        # Get current user from Auth
+        from src.auth import Auth
+        self.current_user = Auth.get_current_user()
+        
         self.current_page = None
         
         # -- Dimiourgia tou sidebar (xriso fonto) -- #
@@ -125,7 +130,7 @@ class OrganizerDashboard(ctk.CTkFrame):
 
     def logout(self):
         """Diaxeirisi tis diadikasias logout"""
-        from src.auth import Auth  # Import here to avoid circular imports
+        from src.auth import Auth  
         Auth.logout()
-        from ui.home import HomePage  # Import here to avoid circular imports
+        from ui.home import HomePage  
         self.master.show_page(HomePage)

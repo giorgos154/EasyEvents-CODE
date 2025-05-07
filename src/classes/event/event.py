@@ -133,6 +133,36 @@ class Event:
         return events
 
     @classmethod
+    def find_organizer_events(cls, organizer_id):
+        """
+        find_organizer_events (Class Method): Returns all events created by an organizer
+        """
+        conn = get_db_connection()
+        events = []
+        if not conn:
+            print("No database connection")
+            return events
+
+        try:
+            cursor = conn.cursor()
+            query = """
+                SELECT * FROM events 
+                WHERE organizer_id = %s 
+                ORDER BY event_date ASC
+            """
+            cursor.execute(query, (organizer_id,))
+            results = cursor.fetchall()
+            for event_data in results:
+                event = cls(**event_data)
+                events.append(event)
+        except pymysql.Error as e:
+            print(f"Database Error in Event.find_organizer_events: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+        return events
+
+    @classmethod
     def find_user_events(cls, user_id):
         """
         find_user_events (Class Method): Epistrefei ola ta events pou symmetexei o xristis
