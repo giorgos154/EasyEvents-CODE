@@ -1,28 +1,17 @@
 import customtkinter as ctk
 from datetime import datetime, timedelta
-import pymysql
-
-def get_db_connection():
-    try:
-        conn = pymysql.connect(
-            host='localhost',
-            port=3306,
-            user='root',
-            password='admin',
-            database='easyevents',
-            cursorclass=pymysql.cursors.DictCursor
-        )
-        return conn
-    except pymysql.MySQLError as e:
-        print(f"Connection error: {e}")
-        return None
+import mysql.connector
 
 def get_events_from_db():
-    conn = get_db_connection()
-    if conn is None:
-        return []
+    # Σύνδεση με τη βάση δεδομένων
+    conn = mysql.connector.connect(
+        host='localhost',
+        user='root',
+        password='root',
+        database='τλ'
+    )
 
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
 
     # Εκτέλεση του ερωτήματος
     cursor.execute("SELECT title, event_date, venue, description, cost FROM events")
@@ -183,47 +172,73 @@ class FindEventsPage(ctk.CTkFrame):
             buttons_frame = ctk.CTkFrame(card, fg_color="white")
             buttons_frame.pack(side="right", padx=10, pady=10)
 
-            ctk.CTkLabel(buttons_frame, text=event["price"], font=ctk.CTkFont(family="Roboto", size=14)).pack(
-                anchor="w")
-            ctk.CTkButton(buttons_frame, text="Details", font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
-                          fg_color="#C8A165", hover_color="#b38e58").pack(pady=5)
+            ctk.CTkLabel(buttons_frame, text=event["price"], font=ctk.CTkFont(family="Roboto", size=24, weight="bold"),
+                         text_color="#C8A165").pack(pady=(0, 10))
+            ctk.CTkButton(buttons_frame, text="Details  →", fg_color="#C8A165", hover_color="#b38e58",
+                          font=ctk.CTkFont(family="Roboto", size=14, weight="bold"), width=120, height=35,
+                          corner_radius=8,
+                          text_color="black", command=lambda e=event: self.dashboard.show_event_details(e)).pack()
 
     def matches_search(self, event, search_text):
         return search_text in event["title"].lower() or search_text in event["description"].lower()
 
     def matches_category(self, event, category):
-        return category == "All Categories" or category in event["title"]
+        return category == "All Categories"  # Δεν υπάρχει ανάγκη να εξετάσουμε tags
 
     def matches_city(self, event, city):
-        return city == "All Cities" or city in event["location"]
+        return city == "All Cities" or city.lower() in event["location"].lower()
 
     def matches_price(self, event, price_range):
-        return price_range == "All Prices" or event["price"] in price_range
+        try:
+            price = int(event["price"].replace("€", "").strip())
+        except ValueError:
+            return False
+        if price_range == "All Prices":
+            return True
+        if price_range == "0-25€":
+            return price <= 25
+        if price_range == "26-50€":
+            return 26 <= price <= 50
+        if price_range == "51-100€":
+            return 51 <= price <= 100
+        if price_range == "100€+":
+            return price > 100
+        return True
 
     def matches_date(self, event, date_option):
-        now = datetime.now()
+        current_date = datetime.now()
+
         if date_option == "Any Date":
             return True
-        elif date_option == "Today":
-            return event["date"][:10] == now.strftime("%Y-%m-%d")
-        elif date_option == "This Week":
-            start_of_week = now - timedelta(days=now.weekday())
+        if date_option == "Today":
+            return current_date.date() == datetime.strptime(event["date"], "%Y-%m-%d %H:%M").date()
+        if date_option == "This Week":
+            start_of_week = current_date - timedelta(days=current_date.weekday())
             end_of_week = start_of_week + timedelta(days=6)
-            return start_of_week.date() <= datetime.strptime(event["date"], "%Y-%m-%d %H:%M").date() <= end_of_week.date()
-        elif date_option == "This Month":
-            return now.month == datetime.strptime(event["date"], "%Y-%m-%d %H:%M").month
-        elif date_option == "Next Month":
-            next_month = now.replace(month=now.month + 1 if now.month < 12 else 1, year=now.year + (1 if now.month == 12 else 0))
-            return next_month.month == datetime.strptime(event["date"], "%Y-%m-%d %H:%M").month
+            event_date = datetime.strptime(event["date"], "%Y-%m-%d %H:%M")
+            return start_of_week <= event_date <= end_of_week
+        if date_option == "This Month":
+            start_of_month = current_date.replace(day=1)
+            next_month = current_date.replace(month=current_date.month + 1, day=1)
+            end_of_month = next_month - timedelta(days=1)
+            event_date = datetime.strptime(event["date"], "%Y-%m-%d %H:%M")
+            return start_of_month <= event_date <= end_of_month
+        if date_option == "Next Month":
+            next_month = current_date.replace(month=current_date.month + 1, day=1)
+            start_of_next_month = next_month
+            next_next_month = next_month.replace(month=next_month.month + 1, day=1)
+            end_of_next_month = next_next_month - timedelta(days=1)
+            event_date = datetime.strptime(event["date"], "%Y-%m-%d %H:%M")
+            return start_of_next_month <= event_date <= end_of_next_month
         return False
 
     def sort_events(self, events, sort_option):
         if sort_option == "Date ↑":
-            return sorted(events, key=lambda x: x["date"])
-        elif sort_option == "Date ↓":
-            return sorted(events, key=lambda x: x["date"], reverse=True)
-        elif sort_option == "Price ↑":
-            return sorted(events, key=lambda x: float(x["price"].replace("€", "")))
-        elif sort_option == "Price ↓":
-            return sorted(events, key=lambda x: float(x["price"].replace("€", "")), reverse=True)
-        return events
+            return sorted(events, key=lambda e: datetime.strptime(e["date"], "%Y-%m-%d %H:%M"))
+        if sort_option == "Date ↓":
+            return sorted(events, key=lambda e: datetime.strptime(e["date"], "%Y-%m-%d %H:%M"), reverse=True)
+        if sort_option == "Price ↑":
+            return sorted(events, key=lambda e: int(e["price"].replace("€", "").strip()))
+        if sort_option == "Price ↓":
+            return sorted(events, key=lambda e: int(e["price"].replace("€", "").strip()), reverse=True)
+        return events  # Επιστροφή της λίστας χωρίς αλλαγές εάν η ταξινόμηση είναι κατά "Popularity"
