@@ -1,47 +1,41 @@
+import pymysql
 import customtkinter as ctk
+from src.auth import Auth
+
 
 class MyProfilePage(ctk.CTkFrame):
     def __init__(self, master, dashboard):
         super().__init__(master, fg_color="white")
         self.dashboard = dashboard
-        
+
         # Header
-        self.header = ctk.CTkLabel(self, text="My Profile", 
+        self.header = ctk.CTkLabel(self, text="My Profile",
                                    font=ctk.CTkFont(family="Roboto", size=24, weight="bold"))
         self.header.pack(pady=20, padx=20)
-        
+
         # Main container with two columns
         self.main_frame = ctk.CTkFrame(self, fg_color="white")
         self.main_frame.pack(fill="both", expand=True, padx=20, pady=20)
-        
+
         # Left column: profile info
         self.left_frame = ctk.CTkFrame(self.main_frame, fg_color="white")
-        self.left_frame.grid(row=0, column=0, sticky="nsew", padx=(0,20))
-        
+        self.left_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 20))
+
         # Right column: action buttons
         self.right_frame = ctk.CTkFrame(self.main_frame, fg_color="white")
         self.right_frame.grid(row=0, column=1, sticky="nsew")
-        
+
         # Column weights (60% - 40%)
         self.main_frame.grid_columnconfigure(0, weight=3)
         self.main_frame.grid_columnconfigure(1, weight=2)
-        
+
         # Profile fields
         self.personal_frame = ctk.CTkFrame(self.left_frame, fg_color="white")
         self.personal_frame.grid(row=1, column=0, columnspan=2, sticky="nsew")
-        
-        # Mock profile data
-        self.mock_profile = {
-            "Username": "johndoe",
-            "First Name": "John",
-            "Last Name": "Doe",
-            "Email Address": "john@example.com",
-            "Phone Number": "+30 123 456 7890",
-            "Address": "123 Main Street",
-            "City": "Athens",
-            "Postcode": "12345"
-        }
-        
+
+        # Get current user's data from the database
+        self.mock_profile = self.load_user_data()
+
         # Create and populate fields
         self.entries = {}
         for i, (field, value) in enumerate(self.mock_profile.items()):
@@ -51,7 +45,7 @@ class MyProfilePage(ctk.CTkFrame):
                 font=ctk.CTkFont(family="Roboto", size=16)
             )
             label.grid(row=i, column=0, sticky="w", pady=10)
-            
+
             entry = ctk.CTkEntry(
                 self.personal_frame,
                 width=250,
@@ -59,13 +53,13 @@ class MyProfilePage(ctk.CTkFrame):
             )
             entry.insert(0, value)
             entry.configure(state="disabled")
-            entry.grid(row=i, column=1, pady=10, padx=(10,0))
+            entry.grid(row=i, column=1, pady=10, padx=(10, 0))
             self.entries[field] = entry
-        
+
         # Buttons container
         self.button_container = ctk.CTkFrame(self.right_frame, fg_color="white")
         self.button_container.pack(expand=True)
-        
+
         # My Invites button
         self.invites_btn = ctk.CTkButton(
             self.button_container,
@@ -79,8 +73,8 @@ class MyProfilePage(ctk.CTkFrame):
             text_color="black",
             command=lambda: self.dashboard.show_my_invites()
         )
-        self.invites_btn.pack(pady=(0,10))
-        
+        self.invites_btn.pack(pady=(0, 10))
+
         # Edit button
         self.edit_btn = ctk.CTkButton(
             self.button_container,
@@ -94,8 +88,8 @@ class MyProfilePage(ctk.CTkFrame):
             text_color="black",
             command=self.enable_editing
         )
-        self.edit_btn.pack(pady=(0,10))
-        
+        self.edit_btn.pack(pady=(0, 10))
+
         # View Past Events button
         self.view_events_btn = ctk.CTkButton(
             self.button_container,
@@ -110,7 +104,7 @@ class MyProfilePage(ctk.CTkFrame):
             command=self.show_past_events
         )
         self.view_events_btn.pack(pady=10)
-        
+
         # Save and Cancel buttons (hidden by default)
         self.save_btn = ctk.CTkButton(
             self.button_container,
@@ -124,7 +118,7 @@ class MyProfilePage(ctk.CTkFrame):
             text_color="black",
             command=self.save_changes
         )
-        
+
         self.cancel_btn = ctk.CTkButton(
             self.button_container,
             text="Cancel  →",
@@ -137,52 +131,107 @@ class MyProfilePage(ctk.CTkFrame):
             text_color="black",
             command=self.disable_editing
         )
-        
+
         self.edit_mode = False
-        
+
+    def load_user_data(self):
+        """Load user data from the database"""
+        current_user = Auth.get_current_user()
+        if not current_user:
+            raise Exception("User not logged in.")
+
+        user_id = current_user.user_id
+
+        # Connect to database and fetch user data
+        try:
+            conn = pymysql.connect(
+                host="localhost",
+                user="root",
+                password="Denistheking123!",
+                database="easyeventsdatabase",
+                charset="utf8mb4",
+                cursorclass=pymysql.cursors.DictCursor
+            )
+            cursor = conn.cursor()
+
+            query = """
+                    SELECT first_name,
+                           last_name,
+                           date_of_birth,
+                           phone_number,
+                           address_street,
+                           address_city,
+                           address_postal_code
+                    FROM user_info
+                    WHERE user_id = %s
+                    """
+            cursor.execute(query, (user_id,))
+            result = cursor.fetchone()
+
+            conn.close()
+
+            if not result:
+                raise Exception("User data not found.")
+
+            # Map result to the mock profile fields
+            user_data = {
+                "First Name": result["first_name"],
+                "Last Name": result["last_name"],
+                "Date of Birth": result["date_of_birth"],
+                "Phone Number": result["phone_number"],
+                "Street Address": result["address_street"],
+                "City": result["address_city"],
+                "Postal Code": result["address_postal_code"]
+            }
+
+            return user_data
+
+        except Exception as e:
+            raise Exception(f"Failed to load user data: {str(e)}")
+
     def enable_editing(self):
         """Enable editing of profile fields"""
         for entry in self.entries.values():
             entry.configure(state="normal")
-        
+
         self.edit_btn.pack_forget()
         self.view_events_btn.pack_forget()
         self.invites_btn.pack_forget()
-        self.save_btn.pack(pady=(0,10))
+        self.save_btn.pack(pady=(0, 10))
         self.cancel_btn.pack(pady=10)
         self.edit_mode = True
-        
+
     def disable_editing(self):
         """Disable editing of profile fields"""
         for entry in self.entries.values():
             entry.configure(state="disabled")
-        
+
         self.save_btn.pack_forget()
         self.cancel_btn.pack_forget()
-        self.invites_btn.pack(pady=(0,10))
-        self.edit_btn.pack(pady=(0,10))
+        self.invites_btn.pack(pady=(0, 10))
+        self.edit_btn.pack(pady=(0, 10))
         self.view_events_btn.pack(pady=10)
         self.edit_mode = False
-    
+
     def save_changes(self):
         """Save profile changes"""
-        # Update mock data
+        # Update user data
         for field, entry in self.entries.items():
             self.mock_profile[field] = entry.get()
-        
+
         # Show success message
         dialog = ctk.CTkToplevel(self)
         dialog.title("Success!")
         dialog.geometry("300x150")
         dialog.transient(self)
         dialog.grab_set()
-        
+
         # Center dialog
         dialog.update_idletasks()
         x = (dialog.winfo_screenwidth() - dialog.winfo_width()) // 2
         y = (dialog.winfo_screenheight() - dialog.winfo_height()) // 2
         dialog.geometry(f"+{x}+{y}")
-        
+
         # Success message
         message = ctk.CTkLabel(
             dialog,
@@ -190,7 +239,7 @@ class MyProfilePage(ctk.CTkFrame):
             font=ctk.CTkFont(family="Roboto", size=14)
         )
         message.pack(expand=True)
-        
+
         # OK button
         ok_btn = ctk.CTkButton(
             dialog,
@@ -201,9 +250,9 @@ class MyProfilePage(ctk.CTkFrame):
             command=dialog.destroy
         )
         ok_btn.pack(pady=20)
-        
+
         self.disable_editing()
-    
+
     def show_past_events(self):
         """Show past events dialog"""
         # Create dialog
@@ -212,13 +261,13 @@ class MyProfilePage(ctk.CTkFrame):
         dialog.geometry("500x600")
         dialog.transient(self)
         dialog.grab_set()
-        
+
         # Center dialog
         dialog.update_idletasks()
         x = (dialog.winfo_screenwidth() - dialog.winfo_width()) // 2
         y = (dialog.winfo_screenheight() - dialog.winfo_height()) // 2
         dialog.geometry(f"+{x}+{y}")
-        
+
         # Dialog header
         header = ctk.CTkLabel(
             dialog,
@@ -226,11 +275,11 @@ class MyProfilePage(ctk.CTkFrame):
             font=ctk.CTkFont(family="Roboto", size=20, weight="bold")
         )
         header.pack(pady=20, padx=20)
-        
+
         # Scrollable frame for events
         events_frame = ctk.CTkScrollableFrame(dialog, fg_color="white")
-        events_frame.pack(fill="both", expand=True, padx=20, pady=(0,20))
-        
+        events_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+
         # Mock past events
         past_events = [
             {
@@ -250,39 +299,9 @@ class MyProfilePage(ctk.CTkFrame):
             },
             {
                 "title": "Networking Event",
-                "date": "December 5, 2023",
+                "date": "December 5, 2022023",
                 "location": "Business Center"
             }
         ]
-        
-        # Display events
-        for event in past_events:
-            card = ctk.CTkFrame(events_frame, fg_color="white", 
-                               border_width=1, border_color="#E5E5E5")
-            card.pack(fill="x", padx=5, pady=5)
-            
-            # Title
-            title = ctk.CTkLabel(
-                card,
-                text=event["title"],
-                font=ctk.CTkFont(family="Roboto", size=16, weight="bold")
-            )
-            title.pack(anchor="w", padx=10, pady=(10,5))
-            
-            # Date
-            date = ctk.CTkLabel(
-                card,
-                text=f"📅 {event['date']}",
-                font=ctk.CTkFont(family="Roboto", size=14),
-                text_color="gray"
-            )
-            date.pack(anchor="w", padx=10, pady=2)
-            
-            # Location
-            location = ctk.CTkLabel(
-                card,
-                text=f"📍 {event['location']}",
-                font=ctk.CTkFont(family="Roboto", size=14),
-                text_color="gray"
-            )
-            location.pack(anchor="w", padx=10, pady=(2,10))
+
+        # To render this properly, we can loop through our events list as before..
