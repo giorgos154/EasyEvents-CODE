@@ -178,8 +178,8 @@ INSERT INTO events (organizer_id, title, description, category, event_date, venu
   (1, 'Summer Coding Camp', 'Transform from beginner to confident coder in this intensive 5-day workshop. Curriculum covers: HTML5/CSS3, JavaScript fundamentals, React basics, and building full-stack applications. Learn through hands-on projects, code reviews, and mentor guidance. Each participant gets a development environment setup guide, course materials, and 3 months of post-camp support. Build your first web application with our expert instructors.', 'Workshop', '2025-07-10 09:00:00', 'Thessaloniki City Hall', TRUE, 50, TRUE, 200.00, 'credit_card', 'scheduled'),
   (1, 'Startup Pitch Night', 'Your gateway to startup success! Present your innovative ideas to a panel of distinguished investors and industry leaders. Featured judges include top VCs from Athens and international angel investors. Prizes include: €50,000 seed funding, 6-month incubator program access, and mentorship opportunities. Each startup gets 10 minutes to pitch + 5 minutes Q&A. Networking dinner included for all participants.', 'Business', '2025-08-05 19:30:00', 'Patras Innovation Hub', TRUE, 100, TRUE, 50.00, 'bank_transfer', 'scheduled'),
   (1, 'AI & Ethics Symposium', 'Join us for a thought-provoking symposium exploring the ethical implications of artificial intelligence in today''s world. Distinguished speakers will discuss AI bias, privacy concerns, and the future of human-AI interaction. Perfect for tech professionals, ethicists, and anyone interested in the societal impact of AI.', 'Technology', '2025-09-20 10:00:00', 'Athens Digital Forum', TRUE, 200, TRUE, 75.00, 'credit_card', 'scheduled'),
-  (4, 'Art in Motion', 'Experience art like never before in this unique exhibition where traditional artwork meets modern technology. Watch as static paintings come to life through augmented reality, and participate in interactive digital art installations. Features works from both established and emerging Greek artists.', 'Art', '2025-06-25 17:00:00', 'Thessaloniki Cultural Center', TRUE, NULL, FALSE, 0.00, NULL, 'scheduled'),
-  (4, 'Greek Music Night', 'An unforgettable evening celebrating the rich tapestry of Greek music, from traditional rebetiko to modern compositions. Live performances by local musicians, traditional instruments showcase, and dancing. Includes a selection of Greek wines and meze.', 'Music', '2025-07-15 20:00:00', 'Chania Rooftop Garden', TRUE, 120, TRUE, 35.00, 'credit_card', 'scheduled'),
+  (4, 'Art in Motion', 'Experience art like never before in this unique exhibition where traditional artwork meets modern technology. Watch as static paintings come to life through augmented reality, and participate in interactive digital art installations. Features works from both established and emerging Greek artists.', 'Art', '2025-06-25 17:00:00', 'Thessaloniki Cultural Center', TRUE, NULL, TRUE, 60.00, credit_card, 'scheduled'),
+  (4, 'Greek Music Night', 'An unforgettable evening celebrating the rich tapestry of Greek music, from traditional rebetiko to modern compositions. Live performances by local musicians, traditional instruments showcase, and dancing. Includes a selection of Greek wines and meze.', 'Music', '2025-07-15 20:00:00', 'Chania Rooftop Garden', TRUE, 120, FALSE, 0.00, 'credit_card', 'scheduled'),
   (1, 'Blockchain Workshop', 'Comprehensive hands-on workshop covering blockchain fundamentals, smart contract development, and decentralized applications. Participants will build their own simple blockchain application. Includes development tools, course materials, and lunch.', 'Technology', '2025-08-25 09:00:00', 'Patras Tech Hub', TRUE, 40, TRUE, 250.00, 'cryptocurrency', 'scheduled'),
   (4, 'Photography Masterclass', 'Master the art of photography in this intensive workshop. Learn about composition, lighting, camera settings, and post-processing techniques. Includes practical sessions in various locations around the city. Suitable for beginners and intermediate photographers.', 'Art', '2025-07-30 11:00:00', 'Kalamata Photography Studio', TRUE, 30, TRUE, 180.00, 'credit_card', 'scheduled');
 
@@ -187,7 +187,6 @@ INSERT INTO events (organizer_id, title, description, category, event_date, venu
 INSERT INTO event_participations (user_id, event_id, registration_date, status) VALUES
   (2, 1, '2025-05-01 10:00:00', 'registered'),
   (3, 1, '2025-05-02 14:30:00', 'registered'),
-  (2, 2, '2025-05-03 09:00:00', 'registered'),
   (5, 1, '2025-05-04 11:20:00', 'registered'),
   (6, 5, '2025-05-05 15:45:00', 'registered'),
   (7, 6, '2025-05-06 09:30:00', 'registered'),
@@ -222,7 +221,7 @@ INSERT INTO friendships (user1_id, user2_id) VALUES
   (2, 5),
   (3, 6),
   (5, 7),
-  (6, 8),
+  (2, 8),
   (7, 8);
 
 /* Invitations */
