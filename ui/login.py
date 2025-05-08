@@ -4,18 +4,19 @@ import os
 from tkinter import messagebox
 from src.auth import Auth
 
+
 class LoginPage(ctk.CTkFrame):
     def __init__(self, master, is_organizer=False):
         super().__init__(master)
         self.is_organizer = is_organizer
-        self.master = master  
+        self.master = master
 
         # -- Fortosi tou logo -- #
         image_path = os.path.join("assets", "logo_transparent.png")
         logo_image = Image.open(image_path)
-        self.logo_ctk = ctk.CTkImage(light_image=logo_image, 
-                                    dark_image=logo_image,
-                                    size=(350, 80))  #fixed megethos
+        self.logo_ctk = ctk.CTkImage(light_image=logo_image,
+                                     dark_image=logo_image,
+                                     size=(350, 80))  # fixed megethos
 
         # -- Left Panel (Gold xroma) -- #
         self.left_frame = ctk.CTkFrame(self, corner_radius=0, fg_color="#C8A165")
@@ -28,7 +29,7 @@ class LoginPage(ctk.CTkFrame):
         # -- Logo -- #
         self.logo_label = ctk.CTkLabel(
             self.left_center,
-            text="",  
+            text="",
             image=self.logo_ctk
         )
         self.logo_label.pack(pady=10)
@@ -109,7 +110,7 @@ class LoginPage(ctk.CTkFrame):
         self.login_button.pack(pady=(30, 0))
 
     def on_login_clicked(self):
-     
+
         from ui.user.dashboard import UserDashboard
         from ui.Organizer.dashboard import OrganizerDashboard
 
@@ -128,4 +129,3 @@ class LoginPage(ctk.CTkFrame):
                 dash = UserDashboard(self.master)
 
             dash.pack(fill="both", expand=True)
-
