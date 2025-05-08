@@ -173,7 +173,7 @@ INSERT INTO user_info (user_id, first_name, last_name, date_of_birth, phone_numb
   (8, 'Christina', 'Theodorou', '1994-04-25', '2101234567', 'Patision 89',          'Athina',        '11144');
 
 /* Events */
-NSERT INTO events (organizer_id, title, description, category, event_date, venue, is_public, max_participants, is_paid, cost, payment_method, status) VALUES
+INSERT INTO events (organizer_id, title, description, category, event_date, venue, is_public, max_participants, is_paid, cost, payment_method, status) VALUES
   (1, 'Tech Meetup', 'Join the premier tech networking event of the month! Features live tech demos, lightning talks from industry experts, and hands-on workshops.', 'Technology', '2025-06-15 18:00:00', 'Athens Concert Hall', TRUE, 150, FALSE, 0.00, 'cryptocurrency', 'scheduled'),
   (1, 'Summer Coding Camp', 'Transform from beginner to confident coder in this intensive 5-day workshop. Curriculum covers: HTML5/CSS3, JavaScript fundamentals, React basics, and building full-stack applications.', 'Workshop', '2025-07-10 09:00:00', 'Thessaloniki City Hall', TRUE, 50, TRUE, 200.00, 'credit_card', 'scheduled'),
   (1, 'Startup Pitch Night', 'Your gateway to startup success! Present your innovative ideas to a panel of distinguished investors and industry leaders.', 'Business', '2025-08-05 19:30:00', 'Patras Innovation Hub', TRUE, 100, TRUE, 50.00, 'bank_transfer', 'scheduled'),
