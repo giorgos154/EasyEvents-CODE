@@ -1,7 +1,7 @@
 import customtkinter as ctk
-from src.classes.member.member import Member
-from src.classes.services.payment_handler import PaymentHandler
-from src.classes.services.notification_service import NotificationService
+from classes.member.member import Member
+from classes.services.payment_handler import PaymentHandler
+from classes.services.notification_service import NotificationService
 
 class EventDetailsPage(ctk.CTkFrame):
     def __init__(self, master, dashboard, event_id):
