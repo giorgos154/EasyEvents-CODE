@@ -13,7 +13,7 @@ class InviteFriendsPage(ctk.CTkFrame):
         self.build_ui()
 
     def build_ui(self):
-        # Header section
+
         header = ctk.CTkFrame(self, fg_color="white")
         header.pack(fill="x", padx=20, pady=20)
 
@@ -36,7 +36,7 @@ class InviteFriendsPage(ctk.CTkFrame):
             font=ctk.CTkFont(family="Roboto", size=24, weight="bold")
         ).pack(side="left", padx=20)
 
-        # Main content
+
         content = ctk.CTkFrame(self, fg_color="white")
         content.pack(fill="both", expand=True, padx=20, pady=(0, 20))
 
@@ -82,7 +82,7 @@ class InviteFriendsPage(ctk.CTkFrame):
         user_id = current_user.user_id
 
         try:
-            # Σύνδεση με τη βάση
+
             conn = pymysql.connect(
                 host="localhost",
                 user="root",
@@ -93,7 +93,7 @@ class InviteFriendsPage(ctk.CTkFrame):
             )
             cursor = conn.cursor()
 
-            # Ερώτημα για φίλους
+
             query = """
                     SELECT u.username
                     FROM users u
@@ -105,16 +105,16 @@ class InviteFriendsPage(ctk.CTkFrame):
             cursor.execute(query, (user_id, user_id, user_id))
             friends = cursor.fetchall()
 
-            # Καθαρισμός τυχόν προηγούμενων δεδομένων
+
             for widget in self.friends_frame.winfo_children():
                 widget.destroy()
 
-            # Έλεγχος αν υπάρχουν φίλοι
+
             if not friends:
                 ctk.CTkLabel(self.friends_frame, text="No friends found.", font=ctk.CTkFont(size=14)).pack()
                 return
 
-            # Εμφάνιση φίλων με checkbox
+
             self.selected_friends = {}
             for friend in friends:
                 username = friend["username"]
@@ -133,7 +133,7 @@ class InviteFriendsPage(ctk.CTkFrame):
                     hover_color="#b38e58"
                 ).pack(side="left", padx=10)
 
-            # Κλείσιμο σύνδεσης
+
             conn.close()
 
         except Exception as e:
@@ -183,7 +183,7 @@ class InviteFriendsPage(ctk.CTkFrame):
         ).pack(side="left", padx=10)
 
     def send_invites(self):
-        # Here you would send the invites via DB/email etc.
+
         self.show_success()
 
     def show_success(self):
