@@ -36,23 +36,38 @@ class Event:
     @classmethod
     def find_by_id(cls, event_id):
         """
-        find_by_id (Class Method): Vriskei mia ekdilwsi sti vasi dedomenwn me vasi to ID tis.
-       
+        find_by_id (Class Method): Βρίσκει μια εκδήλωση στη βάση δεδομένων με βάση το ID της.
         """
         conn = get_db_connection()
         event = None
         if not conn:
-            return None # Den egine syndesi me ti vasi
+            return None  # Δεν έγινε σύνδεση με τη βάση
 
         try:
             cursor = conn.cursor()
-            query = "SELECT * FROM events WHERE event_id = %s"
+            query = """
+                    SELECT event_id, \
+                           organizer_id, \
+                           title, \
+                           description, \
+                           category, \
+                           event_date, \
+                           venue,
+                           is_public, \
+                           max_participants, \
+                           is_paid, \
+                           cost, \
+                           status
+                    FROM events
+                    WHERE event_id = %s \
+                    """
+
             cursor.execute(query, (event_id,))
             result = cursor.fetchone()
             if result:
-                # Dimiourgia Event object apo ta data tis vasis
-                event = cls(**result) # Xrisimopoioume **result gia na perasoume ta key-values ws arguments
-        except pymysql.Error as e:
+                # Δημιουργία Event αντικειμένου από τα δεδομένα της βάσης
+                event = cls(**result)  # Χρησιμοποιούμε **result για να περάσουμε τα key-values ως arguments
+        except pymysql.MySQLError as e:  # Χρησιμοποιούμε MySQLError για καλύτερη εξαίρεση
             print(f"Database Error in Event.find_by_id: {e}")
         finally:
             cursor.close()

@@ -2,10 +2,11 @@ import customtkinter as ctk
 from datetime import datetime, timedelta
 from src.classes.event.event import Event
 
+
 def get_events_from_db():
     # Xrisi tis methodou find_all_events() apo tin klasi Event
     events_list = Event.find_all_events()
-    
+
     # Metatropi Event objects se lista
     events = []
     for event in events_list:
@@ -160,12 +161,11 @@ class FindEventsPage(ctk.CTkFrame):
                          wraplength=500, justify="left").pack(anchor="w", pady=(5, 0))
 
             buttons_frame = ctk.CTkFrame(card, fg_color="white", width=150)
-            buttons_frame.pack_propagate(False) 
+            buttons_frame.pack_propagate(False)
             buttons_frame.pack(side="right", padx=10, pady=10)
-            
-           
-            buttons_frame.grid_columnconfigure(0, weight=1)  
-            buttons_frame.grid_rowconfigure((0, 1, 2), weight=1)  
+
+            buttons_frame.grid_columnconfigure(0, weight=1)
+            buttons_frame.grid_rowconfigure((0, 1, 2), weight=1)
 
             # Price Label
             # Format price display
@@ -176,8 +176,8 @@ class FindEventsPage(ctk.CTkFrame):
                 font=ctk.CTkFont(family="Roboto", size=24, weight="bold"),
                 text_color="#C8A165"
             )
-            price_label.grid(row=1, column=0, pady=(10,10))
-            
+            price_label.grid(row=1, column=0, pady=(10, 10))
+
             # Details button
             details_btn = ctk.CTkButton(
                 buttons_frame,
@@ -191,7 +191,7 @@ class FindEventsPage(ctk.CTkFrame):
                 text_color="black",
                 command=lambda eid=event["event_id"]: self.dashboard.show_event_details(eid)
             )
-            details_btn.grid(row=2, column=0, pady=(0,10))
+            details_btn.grid(row=2, column=0, pady=(0, 10))
 
     def matches_search(self, event, search_text):
         return search_text in event["title"].lower() or search_text in event["description"].lower()
