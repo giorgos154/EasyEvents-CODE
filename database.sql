@@ -226,7 +226,11 @@ INSERT INTO friendships (user1_id, user2_id) VALUES
 
 /* Invitations */
 INSERT INTO invitations (sender_userid, receipient_userid, event_id, sender_message, status) VALUES
-  (1, 2, 3, 'Join us for the pitch night!', 'pending');
+  (1, 2, 3, 'Join us for the pitch night!', 'pending'),
+  (4, 2, 5, 'Έλα στην έκθεση τέχνης! Θα είναι μοναδική εμπειρία.', 'pending'),
+  (4, 2, 6, 'Η βραδιά Ελληνικής μουσικής θα σε ταξιδέψει!', 'accepted'),
+  (1, 2, 7, 'Μην χάσεις το blockchain workshop, θα είναι hands-on.', 'pending'),
+  (4, 2, 8, 'Σε ενδιαφέρει η φωτογραφία; Έλα μαζί μου στο masterclass!', 'rejected');
 
 /* Discussions */
 INSERT INTO discussions (event_id, user_id, message_text, timestamp) VALUES
