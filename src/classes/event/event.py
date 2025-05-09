@@ -134,7 +134,7 @@ class Event:
 
         try:
             cursor = conn.cursor()
-            query = "SELECT * FROM events ORDER BY event_date ASC"
+            query = "SELECT * FROM events WHERE DATE(event_date) >= CURDATE() ORDER BY event_date ASC"
             cursor.execute(query)
             results = cursor.fetchall()
             for event_data in results:
