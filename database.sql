@@ -181,7 +181,11 @@ INSERT INTO events (organizer_id, title, description, category, event_date, venu
   (4, 'Art in Motion', 'Experience art like never before in this unique exhibition where traditional artwork meets modern technology.', 'Art', '2025-06-25 17:00:00', 'Thessaloniki Cultural Center', TRUE, NULL, FALSE, 0.00, NULL, 'scheduled'),
   (4, 'Greek Music Night', 'An unforgettable evening celebrating the rich tapestry of Greek music, from traditional rebetiko to modern compositions.', 'Music', '2025-07-15 20:00:00', 'Chania Rooftop Garden', TRUE, 120, TRUE, 35.00, 'credit_card', 'scheduled'),
   (1, 'Blockchain Workshop', 'Comprehensive hands-on workshop covering blockchain fundamentals, smart contract development, and decentralized applications.', 'Technology', '2025-08-25 09:00:00', 'Patras Tech Hub', TRUE, 40, TRUE, 250.00, 'cryptocurrency', 'scheduled'),
-  (4, 'Photography Masterclass', 'Master the art of photography in this intensive workshop. Learn about composition, lighting, camera settings, and post-processing techniques. Includes practical sessions in various locations around the city. Suitable for beginners and intermediate photographers.', 'Art', '2025-07-30 11:00:00', 'Kalamata Photography Studio', TRUE, 30, TRUE, 180.00, 'credit_card', 'scheduled');
+  (4, 'Photography Masterclass', 'Master the art of photography in this intensive workshop. Learn about composition, lighting, camera settings, and post-processing techniques. Includes practical sessions in various locations around the city. Suitable for beginners and intermediate photographers.', 'Art', '2025-07-30 11:00:00', 'Kalamata Photography Studio', TRUE, 30, TRUE, 180.00, 'credit_card', 'scheduled'),
+  (1, 'Past Tech Conference', 'A comprehensive tech conference featuring industry leaders and innovative solutions.', 'Technology', '2024-12-15 10:00:00', 'Athens Digital Hub', TRUE, 200, TRUE, 100.00, 'credit_card', 'completed'),
+  (1, 'Winter Code Sprint', 'Intensive coding workshop focused on modern web development.', 'Workshop', '2025-01-20 09:00:00', 'Thessaloniki Tech Center', TRUE, 50, TRUE, 150.00, 'bank_transfer', 'completed'),
+  (1, 'Digital Marketing Summit', 'Expert insights into latest digital marketing trends and strategies.', 'Business', '2025-02-28 14:00:00', 'Heraklion Business Center', TRUE, 150, TRUE, 75.00, 'credit_card', 'completed');
+
 
 /* Participations */
 INSERT INTO event_participations (user_id, event_id, registration_date, status) VALUES
@@ -226,7 +230,11 @@ INSERT INTO friendships (user1_id, user2_id) VALUES
 
 /* Invitations */
 INSERT INTO invitations (sender_userid, receipient_userid, event_id, sender_message, status) VALUES
-  (1, 2, 3, 'Join us for the pitch night!', 'pending');
+  (1, 2, 3, 'Join us for the pitch night!', 'pending'),
+  (4, 2, 5, 'Έλα στην έκθεση τέχνης! Θα είναι μοναδική εμπειρία.', 'pending'),
+  (4, 2, 6, 'Η βραδιά Ελληνικής μουσικής θα σε ταξιδέψει!', 'accepted'),
+  (1, 2, 7, 'Μην χάσεις το blockchain workshop, θα είναι hands-on.', 'pending'),
+  (4, 2, 8, 'Σε ενδιαφέρει η φωτογραφία; Έλα μαζί μου στο masterclass!', 'rejected');
 
 /* Discussions */
 INSERT INTO discussions (event_id, user_id, message_text, timestamp) VALUES
