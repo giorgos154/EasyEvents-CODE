@@ -176,7 +176,7 @@ INSERT INTO user_info (user_id, first_name, last_name, date_of_birth, phone_numb
 /* Events */
 INSERT INTO events (organizer_id, title, description, category, event_date, venue, is_public, max_participants, is_paid, cost, payment_method, status) VALUES
   (1, 'Tech Meetup', 'Tech demos, lightning talks, and workshops.', 'Technology', '2025-06-15 18:00:00', 'Athens Concert Hall', TRUE, 150, FALSE, 0.00, 'cryptocurrency', 'completed'),
-  (1, 'Summer Coding Camp', '5-day coding bootcamp: HTML/CSS, JS, React, full-stack.', 'Workshop', '2025-07-10 09:00:00', 'Thessaloniki City Hall', TRUE, 50, TRUE, 200.00, 'credit_card', 'scheduled'),
+  (1, 'Summer Coding Camp', '5-day coding bootcamp: HTML/CSS, JS, React, full-stack.', 'Workshop', '2025-07-10 09:00:00', 'Thessaloniki City Hall', TRUE, 50, TRUE, 200.00, 'credit_card', 'completed'),
   (1, 'Startup Pitch Night', 'Pitch to investors and tech leaders.', 'Business', '2025-08-05 19:30:00', 'Patras Innovation Hub', TRUE, 100, TRUE, 50.00, 'bank_transfer', 'scheduled'),
   (1, 'AI & Ethics Symposium', 'Explore the ethical side of AI.', 'Technology', '2025-09-20 10:00:00', 'Athens Digital Forum', TRUE, 200, TRUE, 75.00, 'credit_card', 'scheduled'),
   (4, 'Art in Motion', 'Where art meets technology.', 'Art', '2025-06-25 17:00:00', 'Thessaloniki Cultural Center', TRUE, NULL, FALSE, 0.00, NULL, 'scheduled'),
