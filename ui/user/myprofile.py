@@ -63,7 +63,7 @@ class MyProfilePage(ctk.CTkFrame):
         # My Invites button
         self.invites_btn = ctk.CTkButton(
             self.button_container,
-            text="My Invites (2)  →",
+            text="My Invites (2) →",
             fg_color="#C8A165",
             hover_color="#b38e58",
             font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
@@ -78,7 +78,7 @@ class MyProfilePage(ctk.CTkFrame):
         # Edit button
         self.edit_btn = ctk.CTkButton(
             self.button_container,
-            text="Edit Profile  →",
+            text="Edit Profile →",
             fg_color="#C8A165",
             hover_color="#b38e58",
             font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
@@ -93,7 +93,7 @@ class MyProfilePage(ctk.CTkFrame):
         # View Past Events button
         self.view_events_btn = ctk.CTkButton(
             self.button_container,
-            text="View Past Events  →",
+            text="View Past Events →",
             fg_color="#C8A165",
             hover_color="#b38e58",
             font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
@@ -108,7 +108,7 @@ class MyProfilePage(ctk.CTkFrame):
         # Save and Cancel buttons (hidden by default)
         self.save_btn = ctk.CTkButton(
             self.button_container,
-            text="Save Changes  →",
+            text="Save Changes →",
             fg_color="#4CAF50",
             hover_color="#45a049",
             font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
@@ -121,7 +121,7 @@ class MyProfilePage(ctk.CTkFrame):
 
         self.cancel_btn = ctk.CTkButton(
             self.button_container,
-            text="Cancel  →",
+            text="Cancel →",
             fg_color="#f44336",
             hover_color="#e53935",
             font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
@@ -142,7 +142,6 @@ class MyProfilePage(ctk.CTkFrame):
 
         user_id = current_user.user_id
 
-        # Connect to database and fetch user data
         try:
             conn = pymysql.connect(
                 host="localhost",
@@ -214,48 +213,113 @@ class MyProfilePage(ctk.CTkFrame):
         self.edit_mode = False
 
     def save_changes(self):
-        """Save profile changes"""
-        # Update user data
-        for field, entry in self.entries.items():
-            self.mock_profile[field] = entry.get()
+        """Save profile changes to the database"""
+        current_user = Auth.get_current_user()
+        if not current_user:
+            raise Exception("User not logged in.")
 
-        # Show success message
-        dialog = ctk.CTkToplevel(self)
-        dialog.title("Success!")
-        dialog.geometry("300x150")
-        dialog.transient(self)
-        dialog.grab_set()
+        try:
+            conn = pymysql.connect(
+                host="localhost",
+                user="root",
+                password="Denistheking123!",
+                database="easyeventsdatabase",
+                charset="utf8mb4",
+                cursorclass=pymysql.cursors.DictCursor
+            )
+            cursor = conn.cursor()
 
-        # Center dialog
-        dialog.update_idletasks()
-        x = (dialog.winfo_screenwidth() - dialog.winfo_width()) // 2
-        y = (dialog.winfo_screenheight() - dialog.winfo_height()) // 2
-        dialog.geometry(f"+{x}+{y}")
+            user_id = current_user.user_id
 
-        # Success message
-        message = ctk.CTkLabel(
-            dialog,
-            text="Your profile has been updated successfully!",
-            font=ctk.CTkFont(family="Roboto", size=14)
-        )
-        message.pack(expand=True)
+            update_query = """
+                           UPDATE user_info
+                           SET first_name = %s,
+                               last_name = %s,
+                               date_of_birth = %s,
+                               phone_number = %s,
+                               address_street = %s,
+                               address_city = %s,
+                               address_postal_code = %s
+                           WHERE user_id = %s
+                           """
 
-        # OK button
-        ok_btn = ctk.CTkButton(
-            dialog,
-            text="OK",
-            fg_color="#4CAF50",
-            hover_color="#45a049",
-            font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
-            command=dialog.destroy
-        )
-        ok_btn.pack(pady=20)
+            # Data to update
+            updated_data = (
+                self.entries["First Name"].get(),
+                self.entries["Last Name"].get(),
+                self.entries["Date of Birth"].get(),
+                self.entries["Phone Number"].get(),
+                self.entries["Street Address"].get(),
+                self.entries["City"].get(),
+                self.entries["Postal Code"].get(),
+                user_id
+            )
 
-        self.disable_editing()
+            cursor.execute(update_query, updated_data)
+            conn.commit()
+
+            # Show success message
+            dialog = ctk.CTkToplevel(self)
+            dialog.title("Success!")
+            dialog.geometry("300x150")
+            dialog.transient(self)
+            dialog.grab_set()
+
+            # Center dialog
+            dialog.update_idletasks()
+            x = (dialog.winfo_screenwidth() - dialog.winfo_width()) // 2
+            y = (dialog.winfo_screenheight() - dialog.winfo_height()) // 2
+            dialog.geometry(f"+{x}+{y}")
+
+            # Success message
+            message = ctk.CTkLabel(
+                dialog,
+                text="Your profile has been updated successfully!",
+                font=ctk.CTkFont(family="Roboto", size=14)
+            )
+            message.pack(expand=True)
+
+            # OK button
+            ok_btn = ctk.CTkButton(
+                dialog,
+                text="OK",
+                fg_color="#4CAF50",
+                hover_color="#45a049",
+                font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
+                command=dialog.destroy
+            )
+            ok_btn.pack(pady=20)
+
+            self.disable_editing()
+
+        except Exception as e:
+            # Show error message
+            error_dialog = ctk.CTkToplevel(self)
+            error_dialog.title("Error")
+            error_dialog.geometry("300x150")
+            error_dialog.transient(self)
+            error_dialog.grab_set()
+
+            message = ctk.CTkLabel(
+                error_dialog,
+                text=f"Failed to update profile: {str(e)}",
+                font=ctk.CTkFont(family="Roboto", size=14)
+            )
+            message.pack(expand=True)
+
+            ok_btn = ctk.CTkButton(
+                error_dialog,
+                text="OK",
+                command=error_dialog.destroy
+            )
+            ok_btn.pack(pady=20)
+
+        finally:
+            if conn:
+                conn.close()
 
     def show_past_events(self):
         """Show past events dialog"""
-        # Create dialog
         dialog = ctk.CTkToplevel(self)
         dialog.title("Past Events")
         dialog.geometry("500x600")
@@ -299,9 +363,33 @@ class MyProfilePage(ctk.CTkFrame):
             },
             {
                 "title": "Networking Event",
-                "date": "December 5, 2022023",
+                "date": "December 5, 2023",
                 "location": "Business Center"
             }
         ]
 
-        # To render this properly, we can loop through our events list as before..
+        # Display events
+        for i, event in enumerate(past_events):
+            event_frame = ctk.CTkFrame(events_frame, fg_color="#f5f5f5", corner_radius=8)
+            event_frame.pack(fill="x", pady=5, padx=5)
+
+            title = ctk.CTkLabel(
+                event_frame,
+                text=event["title"],
+                font=ctk.CTkFont(family="Roboto", size=14, weight="bold")
+            )
+            title.pack(anchor="w", padx=10, pady=(10, 0))
+
+            date = ctk.CTkLabel(
+                event_frame,
+                text=f"Date: {event['date']}",
+                font=ctk.CTkFont(family="Roboto", size=12)
+            )
+            date.pack(anchor="w", padx=10)
+
+            location = ctk.CTkLabel(
+                event_frame,
+                text=f"Location: {event['location']}",
+                font=ctk.CTkFont(family="Roboto", size=12)
+            )
+            location.pack(anchor="w", padx=10, pady=(0, 10))
