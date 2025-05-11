@@ -1,4 +1,4 @@
-use easyevents;
+use τλ;
 DROP TABLE IF EXISTS invitations;
 DROP TABLE IF EXISTS points;
 DROP TABLE IF EXISTS friendships;
