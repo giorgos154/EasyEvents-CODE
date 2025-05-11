@@ -146,8 +146,8 @@ class MyProfilePage(ctk.CTkFrame):
             conn = pymysql.connect(
                 host="localhost",
                 user="root",
-                password="root",
-                database="τλ",
+                password="admin",
+                database="easyevents",
                 charset="utf8mb4",
                 cursorclass=pymysql.cursors.DictCursor
             )
@@ -222,8 +222,8 @@ class MyProfilePage(ctk.CTkFrame):
             conn = pymysql.connect(
                 host="localhost",
                 user="root",
-                password="root",
-                database="τλ",
+                password="admin",
+                database="easyevents",
                 charset="utf8mb4",
                 cursorclass=pymysql.cursors.DictCursor
             )
@@ -318,19 +318,111 @@ class MyProfilePage(ctk.CTkFrame):
             if conn:
                 conn.close()
 
+    def center_window(self, window):
+        """Center a window on screen"""
+        window.update_idletasks()
+        x = (window.winfo_screenwidth() - window.winfo_width()) // 2
+        y = (window.winfo_screenheight() - window.winfo_height()) // 2
+        window.geometry(f"+{x}+{y}")
+
+    def create_event_card(self, parent, event):
+        """Create a card for an event"""
+        # Dimiourgoume ena frame gia tin karta tou event me gkri background
+        event_frame = ctk.CTkFrame(parent, fg_color="#f5f5f5", corner_radius=8)
+        event_frame.pack(fill="x", pady=5, padx=5)
+
+        # Format date
+        event_date = event["event_date"].strftime("%B %d, %Y") if event["event_date"] else "Date not specified"
+
+        # Title
+        title = ctk.CTkLabel(
+            event_frame,
+            text=event["title"],
+            font=ctk.CTkFont(family="Roboto", size=14, weight="bold")
+        )
+        title.pack(anchor="w", padx=10, pady=(10, 0))
+
+        # Date
+        date = ctk.CTkLabel(
+            event_frame,
+            text=f"Date: {event_date}",
+            font=ctk.CTkFont(family="Roboto", size=12)
+        )
+        date.pack(anchor="w", padx=10)
+
+        # Venue
+        venue = ctk.CTkLabel(
+            event_frame,
+            text=f"Venue: {event['venue']}",
+            font=ctk.CTkFont(family="Roboto", size=12)
+        )
+        venue.pack(anchor="w", padx=10)
+
+        # Category
+        if event.get("category"):
+            category = ctk.CTkLabel(
+                event_frame,
+                text=f"Category: {event['category']}",
+                font=ctk.CTkFont(family="Roboto", size=12)
+            )
+            category.pack(anchor="w", padx=10)
+
+        # Status
+        status = ctk.CTkLabel(
+            event_frame,
+            text=f"Status: {event['status'].capitalize()}",
+            font=ctk.CTkFont(family="Roboto", size=12)
+        )
+        status.pack(anchor="w", padx=10)
+
+        # Description (if available)
+        if event.get("description"):
+            description = ctk.CTkLabel(
+                event_frame,
+                text=f"Description: {event['description']}",
+                font=ctk.CTkFont(family="Roboto", size=12),
+                wraplength=400
+            )
+            description.pack(anchor="w", padx=10, pady=(0, 10))
+
+    def show_error_message(self, message, parent=None):
+        """Show an error message dialog"""
+        parent = parent or self
+        dialog = ctk.CTkToplevel(parent)
+        dialog.title("Error")
+        dialog.geometry("300x150")
+        dialog.transient(parent)
+        dialog.grab_set()
+        self.center_window(dialog)
+
+        # Error message
+        ctk.CTkLabel(
+            dialog,
+            text=message,
+            font=ctk.CTkFont(family="Roboto", size=14)
+        ).pack(expand=True)
+
+        # OK button
+        ctk.CTkButton(
+            dialog,
+            text="OK",
+            command=dialog.destroy
+        ).pack(pady=20)
+
     def show_past_events(self):
-        """Show past events dialog"""
+        
+        current_user = Auth.get_current_user()
+        if not current_user:
+            self.show_error_message("User not logged in.")
+            return
+
+        # Dimiourgoume to parathyro ton past events
         dialog = ctk.CTkToplevel(self)
         dialog.title("Past Events")
         dialog.geometry("500x600")
         dialog.transient(self)
         dialog.grab_set()
-
-        # Center dialog
-        dialog.update_idletasks()
-        x = (dialog.winfo_screenwidth() - dialog.winfo_width()) // 2
-        y = (dialog.winfo_screenheight() - dialog.winfo_height()) // 2
-        dialog.geometry(f"+{x}+{y}")
+        self.center_window(dialog)
 
         # Dialog header
         header = ctk.CTkLabel(
@@ -344,186 +436,51 @@ class MyProfilePage(ctk.CTkFrame):
         events_frame = ctk.CTkScrollableFrame(dialog, fg_color="white")
         events_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
 
-        def show_past_events(self):
-            """Show past events dialog"""
-            dialog = ctk.CTkToplevel(self)
-            dialog.title("Past Events")
-            dialog.geometry("500x600")
-            dialog.transient(self)
-            dialog.grab_set()
-
-            # Center dialog
-            self.center_window(dialog)
-
-            # Dialog header
-            header = ctk.CTkLabel(
-                dialog,
-                text="Past Events",
-                font=ctk.CTkFont(family="Roboto", size=20, weight="bold")
+        try:
+            # Syndesi sti vasi
+            conn = pymysql.connect(
+                host="localhost",
+                user="root",
+                password="admin",
+                database="easyevents",
+                charset="utf8mb4",
+                cursorclass=pymysql.cursors.DictCursor
             )
-            header.pack(pady=20, padx=20)
+            cursor = conn.cursor()
 
-            # Scrollable frame for events
-            events_frame = ctk.CTkScrollableFrame(dialog, fg_color="white")
-            events_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+            # Query gia na paroume ola ta past events tou xristi
+            query = """
+                SELECT e.title,
+                       e.event_date,
+                       e.venue,
+                       e.description,
+                       e.category,
+                       e.status
+                FROM events e
+                JOIN event_participations ep ON e.event_id = ep.event_id
+                WHERE ep.user_id = %s
+                AND e.event_date < CURDATE()
+                ORDER BY e.event_date DESC
+            """
 
-            try:
-                with pymysql.connect(
-                        host="localhost",
-                        user="root",
-                        password="Denistheking123!",
-                        database="easyeventsdatabase",
-                        charset="utf8mb4",
-                        cursorclass=pymysql.cursors.DictCursor
-                ) as conn:
-                    with conn.cursor() as cursor:
-                        query = """
-                                SELECT e.title,
-                                       e.event_date,
-                                       e.venue,
-                                       e.description,
-                                       e.category,
-                                       e.status
-                                FROM events e
-                                         JOIN event_participations ep ON e.event_id = ep.event_id
-                                WHERE ep.user_id = %s
-                                  AND e.event_date < CURDATE()
-                                  AND e.status = 'completed'
-                                ORDER BY e.event_date DESC \
-                                """
+            cursor.execute(query, (current_user.user_id,))
+            past_events = cursor.fetchall()
 
-                        cursor.execute(query, (self.user_id,))
-                        past_events = cursor.fetchall()
-
-                        if not past_events:
-                            no_events_label = ctk.CTkLabel(
-                                events_frame,
-                                text="No past events found.",
-                                font=ctk.CTkFont(family="Roboto", size=14)
-                            )
-                            no_events_label.pack(pady=20)
-                            return
-
-                        # Display events
-                        for event in past_events:
-                            self.create_event_card(events_frame, event)
-
-            except Exception as e:
-                self.show_error_message(f"Error loading past events: {e}", parent=dialog)
-
-        def create_event_card(self, parent, event):
-            """Create a card for an event"""
-            event_frame = ctk.CTkFrame(parent, fg_color="#f5f5f5", corner_radius=8)
-            event_frame.pack(fill="x", pady=5, padx=5)
-
-            # Format date
-            event_date = event["event_date"].strftime("%B %d, %Y") if event["event_date"] else "Date not specified"
-
-            # Title
-            title = ctk.CTkLabel(
-                event_frame,
-                text=event["title"],
-                font=ctk.CTkFont(family="Roboto", size=14, weight="bold")
-            )
-            title.pack(anchor="w", padx=10, pady=(10, 0))
-
-            # Date
-            date = ctk.CTkLabel(
-                event_frame,
-                text=f"Date: {event_date}",
-                font=ctk.CTkFont(family="Roboto", size=12)
-            )
-            date.pack(anchor="w", padx=10)
-
-            # Venue
-            venue = ctk.CTkLabel(
-                event_frame,
-                text=f"Venue: {event['venue']}",
-                font=ctk.CTkFont(family="Roboto", size=12)
-            )
-            venue.pack(anchor="w", padx=10)
-
-            # Category
-            if event.get("category"):
-                category = ctk.CTkLabel(
-                    event_frame,
-                    text=f"Category: {event['category']}",
-                    font=ctk.CTkFont(family="Roboto", size=12)
+            if not past_events:
+                # An den vrethikan past events
+                no_events_label = ctk.CTkLabel(
+                    events_frame,
+                    text="No past events found.",
+                    font=ctk.CTkFont(family="Roboto", size=14)
                 )
-                category.pack(anchor="w", padx=10)
+                no_events_label.pack(pady=20)
+            else:
+                # Dimiourgoume mia karta gia kathe past event
+                for event in past_events:
+                    self.create_event_card(events_frame, event)
 
-            # Status
-            status = ctk.CTkLabel(
-                event_frame,
-                text=f"Status: {event['status'].capitalize()}",
-                font=ctk.CTkFont(family="Roboto", size=12)
-            )
-            status.pack(anchor="w", padx=10)
-
-            # Description (if available)
-            if event.get("description"):
-                description = ctk.CTkLabel(
-                    event_frame,
-                    text=f"Description: {event['description']}",
-                    font=ctk.CTkFont(family="Roboto", size=12),
-                    wraplength=400
-                )
-                description.pack(anchor="w", padx=10, pady=(0, 10))
-
-        def show_success_message(self, message):
-            """Show a success message dialog"""
-            dialog = ctk.CTkToplevel(self)
-            dialog.title("Success!")
-            dialog.geometry("300x150")
-            dialog.transient(self)
-            dialog.grab_set()
-            self.center_window(dialog)
-
-            # Success message
-            ctk.CTkLabel(
-                dialog,
-                text=message,
-                font=ctk.CTkFont(family="Roboto", size=14)
-            ).pack(expand=True)
-
-            # OK button
-            ctk.CTkButton(
-                dialog,
-                text="OK",
-                fg_color="#4CAF50",
-                hover_color="#45a049",
-                font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
-                command=dialog.destroy
-            ).pack(pady=20)
-
-        def show_error_message(self, message, parent=None):
-            """Show an error message dialog"""
-            parent = parent or self
-            dialog = ctk.CTkToplevel(parent)
-            dialog.title("Error")
-            dialog.geometry("300x150")
-            dialog.transient(parent)
-            dialog.grab_set()
-            self.center_window(dialog)
-
-            # Error message
-            ctk.CTkLabel(
-                dialog,
-                text=message,
-                font=ctk.CTkFont(family="Roboto", size=14)
-            ).pack(expand=True)
-
-            # OK button
-            ctk.CTkButton(
-                dialog,
-                text="OK",
-                command=dialog.destroy
-            ).pack(pady=20)
-            ###
-
-        def center_window(self, window):
-            """Center a window on screen"""
-            window.update_idletasks()
-            x = (window.winfo_screenwidth() - window.winfo_width()) // 2
-            y = (window.winfo_screenheight() - window.winfo_height()) // 2
-            window.geometry(f"+{x}+{y}")
+        except Exception as e:
+            self.show_error_message(f"Error loading past events: {e}", parent=dialog)
+        finally:
+            if 'conn' in locals():
+                conn.close()
