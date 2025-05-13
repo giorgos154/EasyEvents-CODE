@@ -152,7 +152,7 @@ class UserDashboard(ctk.CTkFrame):
             self.current_page = MyProfilePage(self.content_area, self)
             self.current_page.pack(fill="both", expand=True)
         elif page_name == "Points & Rewards":
-            self.current_page = PointsPage(self.content_area)
+            self.current_page = PointsPage(self.content_area, self)
             self.current_page.pack(fill="both", expand=True)
 
     def show_event_details(self, event):
@@ -178,11 +178,11 @@ class UserDashboard(ctk.CTkFrame):
         self.clear_content()
         self.current_page = MyInvitesPage(self.content_area, self)
         self.current_page.pack(fill="both", expand=True)
-    
+
     def show_rewards(self):
         """Show rewards page"""
         self.clear_content()
-        self.current_page = RewardsPage(self.content_area)
+        self.current_page = RewardsPage(self.content_area, self)  #
         self.current_page.pack(fill="both", expand=True)
     
     def back_to_events(self):
