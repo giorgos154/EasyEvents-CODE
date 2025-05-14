@@ -1,7 +1,7 @@
 import customtkinter as ctk
-import pymysql
 from datetime import datetime
 from src.auth import Auth
+from src.classes.points.points import Points
 
 
 class PointsPage(ctk.CTkFrame):
@@ -20,8 +20,8 @@ class PointsPage(ctk.CTkFrame):
         self.points_frame.pack(fill="x", padx=20, pady=(0, 20))
 
         # Initialize data
-        self.points_history = self.fetch_points_history()
-        self.total_points = sum(transaction["points_change"] for transaction in self.points_history)
+        self.points_history = Points.get_points_history(self.current_user.user_id)
+        self.total_points = Points.get_user_points(self.current_user.user_id)
 
         # Points Display
         self.points_button = ctk.CTkButton(
@@ -74,39 +74,6 @@ class PointsPage(ctk.CTkFrame):
 
         # Display Points History
         self.display_points_history()
-
-    def fetch_points_history(self):
-        try:
-            conn = pymysql.connect(
-                host="localhost",
-                user="root",
-                password="Denistheking123!",
-                database="easyeventsdatabase",
-                charset="utf8mb4",
-                cursorclass=pymysql.cursors.DictCursor
-            )
-            with conn.cursor() as cursor:
-                query = """
-                SELECT 
-    p.points_change, 
-    p.reason, 
-    p.transaction_date, 
-    COALESCE(e.title, 'System Award') AS event_name
-FROM 
-    points p
-LEFT JOIN 
-    events e ON p.event_id = e.event_id
-WHERE 
-    p.user_id = %s
-ORDER BY 
-    p.transaction_date DESC;
-
-                """
-                cursor.execute(query, (self.current_user.user_id,))
-                return cursor.fetchall()
-        except Exception as e:
-            print("Database error:", e)
-            return []
 
     def display_points_history(self):
         for transaction in self.points_history:

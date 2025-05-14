@@ -1,44 +1,36 @@
-import pymysql
 import customtkinter as ctk
 from src.auth import Auth
-
+from datetime import datetime
 
 class MyProfilePage(ctk.CTkFrame):
     def __init__(self, master, dashboard):
         super().__init__(master, fg_color="white")
         self.dashboard = dashboard
 
-
         self.header = ctk.CTkLabel(self, text="My Profile",
                                    font=ctk.CTkFont(family="Roboto", size=24, weight="bold"))
         self.header.pack(pady=20, padx=20)
 
-
         self.main_frame = ctk.CTkFrame(self, fg_color="white")
         self.main_frame.pack(fill="both", expand=True, padx=20, pady=20)
-
 
         self.left_frame = ctk.CTkFrame(self.main_frame, fg_color="white")
         self.left_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 20))
 
-
         self.right_frame = ctk.CTkFrame(self.main_frame, fg_color="white")
         self.right_frame.grid(row=0, column=1, sticky="nsew")
-
 
         self.main_frame.grid_columnconfigure(0, weight=3)
         self.main_frame.grid_columnconfigure(1, weight=2)
 
-
         self.personal_frame = ctk.CTkFrame(self.left_frame, fg_color="white")
         self.personal_frame.grid(row=1, column=0, columnspan=2, sticky="nsew")
 
-
-        self.mock_profile = self.load_user_data()
-
+        self.current_user = Auth.get_current_user()
+        self.user_info = self.current_user.load_user_info()
 
         self.entries = {}
-        for i, (field, value) in enumerate(self.mock_profile.items()):
+        for i, (field, value) in enumerate(self.user_info.items()):
             label = ctk.CTkLabel(
                 self.personal_frame,
                 text=field,
@@ -63,7 +55,7 @@ class MyProfilePage(ctk.CTkFrame):
         # My Invites button
         self.invites_btn = ctk.CTkButton(
             self.button_container,
-            text="My Invites (2) →",
+            text="My Invites→",
             fg_color="#C8A165",
             hover_color="#b38e58",
             font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
@@ -134,60 +126,6 @@ class MyProfilePage(ctk.CTkFrame):
 
         self.edit_mode = False
 
-    def load_user_data(self):
-        """Load user data from the database"""
-        current_user = Auth.get_current_user()
-        if not current_user:
-            raise Exception("User not logged in.")
-
-        user_id = current_user.user_id
-
-        try:
-            conn = pymysql.connect(
-                host="localhost",
-                user="root",
-                password="admin",
-                database="easyevents",
-                charset="utf8mb4",
-                cursorclass=pymysql.cursors.DictCursor
-            )
-            cursor = conn.cursor()
-
-            query = """
-                    SELECT first_name,
-                           last_name,
-                           date_of_birth,
-                           phone_number,
-                           address_street,
-                           address_city,
-                           address_postal_code
-                    FROM user_info
-                    WHERE user_id = %s
-                    """
-            cursor.execute(query, (user_id,))
-            result = cursor.fetchone()
-
-            conn.close()
-
-            if not result:
-                raise Exception("User data not found.")
-
-
-            user_data = {
-                "First Name": result["first_name"],
-                "Last Name": result["last_name"],
-                "Date of Birth": result["date_of_birth"],
-                "Phone Number": result["phone_number"],
-                "Street Address": result["address_street"],
-                "City": result["address_city"],
-                "Postal Code": result["address_postal_code"]
-            }
-
-            return user_data
-
-        except Exception as e:
-            raise Exception(f"Failed to load user data: {str(e)}")
-
     def enable_editing(self):
         """Enable editing of profile fields"""
         for entry in self.entries.values():
@@ -214,49 +152,20 @@ class MyProfilePage(ctk.CTkFrame):
 
     def save_changes(self):
         """Save profile changes to the database"""
-        current_user = Auth.get_current_user()
-        if not current_user:
-            raise Exception("User not logged in.")
+        updated_data = {
+            "First Name": self.entries["First Name"].get(),
+            "Last Name": self.entries["Last Name"].get(),
+            "Date of Birth": self.entries["Date of Birth"].get(),
+            "Phone Number": self.entries["Phone Number"].get(),
+            "Street Address": self.entries["Street Address"].get(),
+            "City": self.entries["City"].get(),
+            "Postal Code": self.entries["Postal Code"].get()
+        }
 
         try:
-            conn = pymysql.connect(
-                host="localhost",
-                user="root",
-                password="admin",
-                database="easyevents",
-                charset="utf8mb4",
-                cursorclass=pymysql.cursors.DictCursor
-            )
-            cursor = conn.cursor()
-
-            user_id = current_user.user_id
-
-            update_query = """
-                           UPDATE user_info
-                           SET first_name = %s,
-                               last_name = %s,
-                               date_of_birth = %s,
-                               phone_number = %s,
-                               address_street = %s,
-                               address_city = %s,
-                               address_postal_code = %s
-                           WHERE user_id = %s
-                           """
-
-            # Data to update
-            updated_data = (
-                self.entries["First Name"].get(),
-                self.entries["Last Name"].get(),
-                self.entries["Date of Birth"].get(),
-                self.entries["Phone Number"].get(),
-                self.entries["Street Address"].get(),
-                self.entries["City"].get(),
-                self.entries["Postal Code"].get(),
-                user_id
-            )
-
-            cursor.execute(update_query, updated_data)
-            conn.commit()
+            success = self.current_user.update_user_info(updated_data)
+            if not success:
+                raise Exception("Failed to update profile")
 
             # Show success message
             dialog = ctk.CTkToplevel(self)
@@ -314,10 +223,6 @@ class MyProfilePage(ctk.CTkFrame):
             )
             ok_btn.pack(pady=20)
 
-        finally:
-            if conn:
-                conn.close()
-
     def center_window(self, window):
         """Center a window on screen"""
         window.update_idletasks()
@@ -327,14 +232,11 @@ class MyProfilePage(ctk.CTkFrame):
 
     def create_event_card(self, parent, event):
         """Create a card for an event"""
-        # Dimiourgoume ena frame gia tin karta tou event me gkri background
         event_frame = ctk.CTkFrame(parent, fg_color="#f5f5f5", corner_radius=8)
         event_frame.pack(fill="x", pady=5, padx=5)
 
-        # Format date
         event_date = event["event_date"].strftime("%B %d, %Y") if event["event_date"] else "Date not specified"
 
-        # Title
         title = ctk.CTkLabel(
             event_frame,
             text=event["title"],
@@ -342,7 +244,6 @@ class MyProfilePage(ctk.CTkFrame):
         )
         title.pack(anchor="w", padx=10, pady=(10, 0))
 
-        # Date
         date = ctk.CTkLabel(
             event_frame,
             text=f"Date: {event_date}",
@@ -350,7 +251,6 @@ class MyProfilePage(ctk.CTkFrame):
         )
         date.pack(anchor="w", padx=10)
 
-        # Venue
         venue = ctk.CTkLabel(
             event_frame,
             text=f"Venue: {event['venue']}",
@@ -358,7 +258,6 @@ class MyProfilePage(ctk.CTkFrame):
         )
         venue.pack(anchor="w", padx=10)
 
-        # Category
         if event.get("category"):
             category = ctk.CTkLabel(
                 event_frame,
@@ -367,7 +266,6 @@ class MyProfilePage(ctk.CTkFrame):
             )
             category.pack(anchor="w", padx=10)
 
-        # Status
         status = ctk.CTkLabel(
             event_frame,
             text=f"Status: {event['status'].capitalize()}",
@@ -375,7 +273,6 @@ class MyProfilePage(ctk.CTkFrame):
         )
         status.pack(anchor="w", padx=10)
 
-        # Description (if available)
         if event.get("description"):
             description = ctk.CTkLabel(
                 event_frame,
@@ -395,14 +292,12 @@ class MyProfilePage(ctk.CTkFrame):
         dialog.grab_set()
         self.center_window(dialog)
 
-        # Error message
         ctk.CTkLabel(
             dialog,
             text=message,
             font=ctk.CTkFont(family="Roboto", size=14)
         ).pack(expand=True)
 
-        # OK button
         ctk.CTkButton(
             dialog,
             text="OK",
@@ -410,13 +305,7 @@ class MyProfilePage(ctk.CTkFrame):
         ).pack(pady=20)
 
     def show_past_events(self):
-        
-        current_user = Auth.get_current_user()
-        if not current_user:
-            self.show_error_message("User not logged in.")
-            return
-
-        # Dimiourgoume to parathyro ton past events
+        """Show past events in a dialog"""
         dialog = ctk.CTkToplevel(self)
         dialog.title("Past Events")
         dialog.geometry("500x600")
@@ -424,7 +313,6 @@ class MyProfilePage(ctk.CTkFrame):
         dialog.grab_set()
         self.center_window(dialog)
 
-        # Dialog header
         header = ctk.CTkLabel(
             dialog,
             text="Past Events",
@@ -432,42 +320,13 @@ class MyProfilePage(ctk.CTkFrame):
         )
         header.pack(pady=20, padx=20)
 
-        # Scrollable frame for events
         events_frame = ctk.CTkScrollableFrame(dialog, fg_color="white")
         events_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
 
         try:
-            # Syndesi sti vasi
-            conn = pymysql.connect(
-                host="localhost",
-                user="root",
-                password="admin",
-                database="easyevents",
-                charset="utf8mb4",
-                cursorclass=pymysql.cursors.DictCursor
-            )
-            cursor = conn.cursor()
-
-            # Query gia na paroume ola ta past events tou xristi
-            query = """
-                SELECT e.title,
-                       e.event_date,
-                       e.venue,
-                       e.description,
-                       e.category,
-                       e.status
-                FROM events e
-                JOIN event_participations ep ON e.event_id = ep.event_id
-                WHERE ep.user_id = %s
-                AND e.event_date < CURDATE()
-                ORDER BY e.event_date DESC
-            """
-
-            cursor.execute(query, (current_user.user_id,))
-            past_events = cursor.fetchall()
-
+            past_events = self.current_user.get_past_events()
+            
             if not past_events:
-                # An den vrethikan past events
                 no_events_label = ctk.CTkLabel(
                     events_frame,
                     text="No past events found.",
@@ -475,12 +334,8 @@ class MyProfilePage(ctk.CTkFrame):
                 )
                 no_events_label.pack(pady=20)
             else:
-                # Dimiourgoume mia karta gia kathe past event
                 for event in past_events:
                     self.create_event_card(events_frame, event)
 
         except Exception as e:
             self.show_error_message(f"Error loading past events: {e}", parent=dialog)
-        finally:
-            if 'conn' in locals():
-                conn.close()

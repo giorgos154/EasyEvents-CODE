@@ -1,8 +1,9 @@
 import customtkinter as ctk
 from datetime import datetime
-import pymysql
 from src.auth import Auth
-from CTkMessagebox import CTkMessagebox
+from src.classes.points.points import Points
+from src.classes.points.rewards import Rewards
+
 
 
 class RewardsPage(ctk.CTkFrame):
@@ -49,7 +50,7 @@ class RewardsPage(ctk.CTkFrame):
         self.back_btn = ctk.CTkButton(
             self,
             text="← Back to Points",
-            command=lambda: master.master.back_to_points(),
+            command=lambda: self.dashboard.show_page("Points & Rewards"),
             font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
             fg_color="#C8A165",
             hover_color="#b38e58",
@@ -60,40 +61,10 @@ class RewardsPage(ctk.CTkFrame):
         self.back_btn.pack(pady=20)
 
     def get_user_points(self):
-        try:
-            conn = pymysql.connect(
-                host="localhost",
-                user="root",
-                password="Denistheking123!",
-                database="easyeventsdatabase",
-                charset="utf8mb4",
-                cursorclass=pymysql.cursors.DictCursor
-            )
-            with conn.cursor() as cursor:
-                cursor.execute("SELECT COALESCE(SUM(points_change), 0) AS total FROM points WHERE user_id = %s",
-                               (self.current_user.user_id,))
-                result = cursor.fetchone()
-                return result["total"] if result else 0
-        except Exception as e:
-            print("Error fetching user points:", e)
-            return 0
+        return Points.get_user_points(self.current_user.user_id)
 
     def fetch_rewards(self):
-        try:
-            conn = pymysql.connect(
-                host="localhost",
-                user="root",
-                password="Denistheking123!",
-                database="easyeventsdatabase",
-                charset="utf8mb4",
-                cursorclass=pymysql.cursors.DictCursor
-            )
-            with conn.cursor() as cursor:
-                cursor.execute("SELECT * FROM rewards")
-                return cursor.fetchall()
-        except Exception as e:
-            print("Error fetching rewards:", e)
-            return []
+        return Rewards.get_all_rewards()
 
     def display_rewards(self):
         for reward in self.rewards:
@@ -122,12 +93,17 @@ class RewardsPage(ctk.CTkFrame):
             desc = ctk.CTkLabel(
                 content,
                 text=reward["description"],
-                font=ctk.CTkFont(family="Roboto", size=14)
+                font=ctk.CTkFont(family="Roboto", size=14),
+                wraplength=500,
+                justify="left"
             )
             desc.pack(anchor="w", pady=(5, 0))
 
+            btn_frame = ctk.CTkFrame(card, fg_color="white", width=150)
+            btn_frame.pack(side="right", padx=10, pady=10)
+            
             redeem_btn = ctk.CTkButton(
-                card,
+                btn_frame,
                 text="Redeem  →",
                 font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
                 fg_color="#C8A165",
@@ -138,19 +114,59 @@ class RewardsPage(ctk.CTkFrame):
                 state="normal",
                 command=lambda r=reward: self.attempt_redeem(r)
             )
-            redeem_btn.pack(side="right", padx=10)
+            redeem_btn.pack(expand=True)
+
+    def show_error_popup(self, message):
+        """Show error in popup dialog"""
+        error = ctk.CTkToplevel(self)
+        error.title("Error")
+        error.geometry("300x150")
+        error.transient(self)
+        error.grab_set()
+        
+        # Center window
+        error.update_idletasks()
+        x = (error.winfo_screenwidth() - error.winfo_width()) // 2
+        y = (error.winfo_screenheight() - error.winfo_height()) // 2
+        error.geometry(f"+{x}+{y}")
+        
+        label = ctk.CTkLabel(
+            error,
+            text=message,
+            font=ctk.CTkFont(family="Roboto", size=14),
+            text_color="red"
+        )
+        label.pack(expand=True)
+        
+        ok_btn = ctk.CTkButton(
+            error,
+            text="OK",
+            fg_color="gray",
+            hover_color="#666666",
+            font=ctk.CTkFont(family="Roboto", size=14),
+            width=100,
+            command=error.destroy
+        )
+        ok_btn.pack(pady=20)
 
     def attempt_redeem(self, reward):
         if self.available_points < reward["points_required"]:
-            CTkMessagebox(title="Error", message="Not enough points to redeem this reward.", icon="cancel")
+            self.show_error_popup("Not enough points to redeem this reward.")
         else:
             self.show_confirm_dialog(reward)
 
     def show_confirm_dialog(self, reward):
         confirm_window = ctk.CTkToplevel(self)
         confirm_window.title("Confirm Redemption")
-        confirm_window.geometry("400x200")
+        confirm_window.geometry("300x150")
+        confirm_window.transient(self)
         confirm_window.grab_set()
+        
+        # Center window
+        confirm_window.update_idletasks()
+        x = (confirm_window.winfo_screenwidth() - confirm_window.winfo_width()) // 2
+        y = (confirm_window.winfo_screenheight() - confirm_window.winfo_height()) // 2
+        confirm_window.geometry(f"+{x}+{y}")
 
         label = ctk.CTkLabel(confirm_window, text=f"Redeem '{reward['name']}' for {reward['points_required']} points?")
         label.pack(pady=20)
@@ -169,37 +185,27 @@ class RewardsPage(ctk.CTkFrame):
         cancel_btn.pack(side="left", padx=10)
 
     def perform_redemption(self, reward):
-        try:
-            conn = pymysql.connect(
-                host="localhost",
-                user="root",
-                password="Denistheking123!",
-                database="easyeventsdatabase",
-                charset="utf8mb4",
-                cursorclass=pymysql.cursors.DictCursor
-            )
-            with conn.cursor() as cursor:
-                insert_query = """
-                INSERT INTO points (user_id, event_id, reason, points_change, transaction_date)
-                VALUES (%s, NULL, %s, %s, NOW())
-                """
-                cursor.execute(insert_query, (
-                    self.current_user.user_id,
-                    f"Redeemed: {reward['name']}",
-                    -reward['points_required']
-                ))
-                conn.commit()
-        except Exception as e:
-            print("Database insert error:", e)
+        success = Rewards.redeem_reward(self.current_user.user_id, reward["reward_id"], reward["points_required"])
+        if not success:
+            self.show_error_popup("Failed to redeem reward. Please try again.")
             return
 
-        self.available_points -= reward["points_required"]
+        # Update points display
+        self.available_points = Points.get_user_points(self.current_user.user_id)
         self.points_display.configure(text=str(self.available_points))
 
+        # Show success window
         success_window = ctk.CTkToplevel(self)
         success_window.title("Success")
         success_window.geometry("300x150")
         success_window.grab_set()
+
+        # Center window
+        success_window.update_idletasks()
+        x = (success_window.winfo_screenwidth() - success_window.winfo_width()) // 2
+        y = (success_window.winfo_screenheight() - success_window.winfo_height()) // 2
+        success_window.geometry(f"+{x}+{y}")
+
 
         label = ctk.CTkLabel(success_window, text="Redemption successful!")
         label.pack(pady=20)
