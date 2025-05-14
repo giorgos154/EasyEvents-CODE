@@ -1,7 +1,6 @@
-import pymysql
 import customtkinter as ctk
 from src.auth import Auth
-
+from src.classes.event.InviteFriends import InviteFriends
 
 class InviteFriendsPage(ctk.CTkFrame):
     def __init__(self, master, dashboard, event):
@@ -9,11 +8,11 @@ class InviteFriendsPage(ctk.CTkFrame):
         self.dashboard = dashboard
         self.event = event
         self.selected_friends = {}
+        self.invite_manager = InviteFriends()
 
         self.build_ui()
 
     def build_ui(self):
-
         header = ctk.CTkFrame(self, fg_color="white")
         header.pack(fill="x", padx=20, pady=20)
 
@@ -35,7 +34,6 @@ class InviteFriendsPage(ctk.CTkFrame):
             text=f"Invite Friends to {self.event.title}",
             font=ctk.CTkFont(family="Roboto", size=24, weight="bold")
         ).pack(side="left", padx=20)
-
 
         content = ctk.CTkFrame(self, fg_color="white")
         content.pack(fill="both", expand=True, padx=20, pady=(0, 20))
@@ -79,65 +77,30 @@ class InviteFriendsPage(ctk.CTkFrame):
             self.show_error("User not logged in.")
             return
 
-        user_id = current_user.user_id
+        friends = self.invite_manager.load_friends(current_user.user_id)
 
-        try:
+        for widget in self.friends_frame.winfo_children():
+            widget.destroy()
 
-            conn = pymysql.connect(
-                host="localhost",
-                user="root",
-                password="root",
-                database="τλ",
-                charset="utf8mb4",
-                cursorclass=pymysql.cursors.DictCursor
-            )
-            cursor = conn.cursor()
+        if not friends:
+            ctk.CTkLabel(self.friends_frame, text="No friends found.", font=ctk.CTkFont(size=14)).pack()
+            return
 
+        self.selected_friends = {}
+        for friend in friends:
+            friend_frame = ctk.CTkFrame(self.friends_frame, fg_color="white")
+            friend_frame.pack(fill="x", pady=5)
 
-            query = """
-                    SELECT u.username
-                    FROM users u
-                             JOIN friendships f ON
-                        (u.user_id = f.user1_id AND f.user2_id = %s)
-                            OR (u.user_id = f.user2_id AND f.user1_id = %s)
-                    WHERE u.user_id != %s \
-                    """
-            cursor.execute(query, (user_id, user_id, user_id))
-            friends = cursor.fetchall()
-
-
-            for widget in self.friends_frame.winfo_children():
-                widget.destroy()
-
-
-            if not friends:
-                ctk.CTkLabel(self.friends_frame, text="No friends found.", font=ctk.CTkFont(size=14)).pack()
-                return
-
-
-            self.selected_friends = {}
-            for friend in friends:
-                username = friend["username"]
-
-                friend_frame = ctk.CTkFrame(self.friends_frame, fg_color="white")
-                friend_frame.pack(fill="x", pady=5)
-
-                var = ctk.BooleanVar()
-                self.selected_friends[username] = var
-
-                ctk.CTkCheckBox(
-                    friend_frame,
-                    text=username,
-                    variable=var,
-                    fg_color="#C8A165",
-                    hover_color="#b38e58"
-                ).pack(side="left", padx=10)
-
-
-            conn.close()
-
-        except Exception as e:
-            self.show_error(f"Failed to load friends: {str(e)}")
+            var = ctk.BooleanVar()
+            display_text = f"{friend['first_name']} {friend['last_name']} ({friend['username']})"
+            self.selected_friends[friend['username']] = var
+            ctk.CTkCheckBox(
+                friend_frame,
+                text=display_text,
+                variable=var,
+                fg_color="#C8A165",
+                hover_color="#b38e58"
+            ).pack(side="left", padx=10)
 
     def confirm_invites(self):
         selected = [username for username, var in self.selected_friends.items() if var.get()]
@@ -183,8 +146,20 @@ class InviteFriendsPage(ctk.CTkFrame):
         ).pack(side="left", padx=10)
 
     def send_invites(self):
-
-        self.show_success()
+        selected = [username for username, var in self.selected_friends.items() if var.get()]
+        message = self.message_box.get("1.0", "end-1c")
+        
+        current_user = Auth.get_current_user()
+        if not current_user:
+            self.show_error("User not logged in.")
+            return
+        
+        success = self.invite_manager.send_invites(selected, self.event.event_id, message, current_user.user_id)
+        
+        if success:
+            self.show_success()
+        else:
+            self.show_error("Failed to send invites. Please try again.")
 
     def show_success(self):
         dialog = ctk.CTkToplevel(self)
