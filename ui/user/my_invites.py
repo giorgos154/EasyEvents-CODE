@@ -1,15 +1,15 @@
 import customtkinter as ctk
 from tkinter import messagebox
-from src.db_connection import get_db_connection
-from src.auth import Auth  # Πρέπει να παρέχει user_id μέσω Auth.get_current_user()
 from datetime import datetime
-
+from src.auth import Auth
+from src.classes.event.InviteFriends import InviteFriends
 
 class MyInvitesPage(ctk.CTkFrame):
     def __init__(self, master, dashboard):
         super().__init__(master, fg_color="white")
         self.dashboard = dashboard
         self.invites = []
+        self.invite_manager = InviteFriends()
 
         # Header
         header_frame = ctk.CTkFrame(self, fg_color="white")
@@ -42,45 +42,12 @@ class MyInvitesPage(ctk.CTkFrame):
         self.load_invites()
 
     def load_invites(self):
-        self.invites = []
         current_user = Auth.get_current_user()
         if not current_user:
             messagebox.showerror("Error", "User not logged in.")
             return
-
-        conn = get_db_connection()
-        if not conn:
-            messagebox.showerror("Error", "Database connection failed.")
-            return
-
-        try:
-            with conn.cursor() as cursor:
-                query = """
-                        SELECT i.invitation_id, \
-                               i.sender_userid, \
-                               u.username                               AS from_username, \
-                               CONCAT(ui.first_name, ' ', ui.last_name) AS from_name, \
-                               e.title                                  AS event_title, \
-                               e.event_date, \
-                               e.venue                                  AS event_location, \
-                               i.sender_message                         AS message, \
-                               i.status
-                        FROM invitations i
-                                 JOIN users u ON i.sender_userid = u.user_id
-                                 JOIN user_info ui ON u.user_id = ui.user_id
-                                 JOIN events e ON i.event_id = e.event_id
-                        WHERE i.receipient_userid = %s \
-                          AND i.status = 'pending' \
-                          AND e.status = 'scheduled' \
-                        """
-                cursor.execute(query, (current_user.user_id,))
-                self.invites = cursor.fetchall()  # DictCursor επιστρέφει dicts ήδη
-        except Exception as e:
-            print(f"[MyInvitesPage] Error loading invites: {e}")
-            messagebox.showerror("Error", "Could not load invites.")
-        finally:
-            conn.close()
-
+            
+        self.invites = self.invite_manager.load_user_invites(current_user.user_id)
         self.display_invites()
 
     def display_invites(self):
@@ -191,31 +158,18 @@ class MyInvitesPage(ctk.CTkFrame):
         ).pack(side="left")
 
     def accept_invite(self, invite):
-        self.update_invite_status(invite["invitation_id"], "accepted")
-        messagebox.showinfo("Success", f"You have accepted the invitation to {invite['event_title']}.")
-        self.dashboard.show_page("My Events")
+        event_id = self.invite_manager.accept_invite(invite["invitation_id"])
+        if event_id:
+            self.dashboard.show_event_details(event_id)
+            # Short delay to ensure event details page is loaded
+            self.after(100, lambda: self.dashboard.current_page.join_event())
+        else:
+            messagebox.showerror("Error", "Failed to accept invitation.")
 
     def reject_invite(self, invite):
         result = messagebox.askyesno("Reject Invite", f"Reject invitation to {invite['event_title']}?")
         if result:
-            self.update_invite_status(invite["invitation_id"], "rejected")
-            self.load_invites()
-
-    def update_invite_status(self, invitation_id, status):
-        conn = get_db_connection()
-        if not conn:
-            messagebox.showerror("Error", "Database connection failed.")
-            return
-
-        try:
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    "UPDATE invitations SET status = %s WHERE invitation_id = %s",
-                    (status, invitation_id)
-                )
-            conn.commit()
-        except Exception as e:
-            print(f"[MyInvitesPage] Update error: {e}")
-            messagebox.showerror("Error", "Failed to update invitation.")
-        finally:
-            conn.close()
+            if self.invite_manager.reject_invite(invite["invitation_id"]):
+                self.load_invites()
+            else:
+                messagebox.showerror("Error", "Failed to reject invitation.")

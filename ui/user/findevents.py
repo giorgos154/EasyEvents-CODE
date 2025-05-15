@@ -144,6 +144,10 @@ class FindEventsPage(ctk.CTkFrame):
         self.display_filtered_events(sorted_events)
 
     def display_filtered_events(self, events):
+        if not events:  # If events list is empty
+            self.show_no_events_popup()
+            return
+            
         for event in events:
             card = ctk.CTkFrame(self.events_frame, fg_color="white", border_width=1, border_color="#E5E5E5")
             card.pack(fill="x", padx=10, pady=10)
@@ -256,3 +260,34 @@ class FindEventsPage(ctk.CTkFrame):
         if sort_option == "Price ↓":
             return sorted(events, key=lambda e: int(e["price"].replace("€", "").strip()), reverse=True)
         return events  # Επιστροφή της λίστας χωρίς αλλαγές εάν η ταξινόμηση είναι κατά "Popularity"
+
+    def center_window(self, window):
+        window.update_idletasks()
+        x = (window.winfo_screenwidth() - window.winfo_width()) // 2
+        y = (window.winfo_screenheight() - window.winfo_height()) // 2
+        window.geometry(f"+{x}+{y}")
+
+    def show_no_events_popup(self):
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("No Events Found")
+        dialog.geometry("400x150")
+        dialog.transient(self)
+        dialog.grab_set()
+
+        self.center_window(dialog)
+
+        ctk.CTkLabel(
+            dialog,
+            text="Sorry, no events found for selected filters",
+            font=ctk.CTkFont(family="Roboto", size=16)
+        ).pack(expand=True)
+
+        ctk.CTkButton(
+            dialog,
+            text="OK",
+            fg_color="#C8A165",
+            hover_color="#b38e58",
+            font=ctk.CTkFont(family="Roboto", size=14),
+            width=100,
+            command=dialog.destroy
+        ).pack(pady=20)

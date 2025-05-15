@@ -155,16 +155,16 @@ class UserDashboard(ctk.CTkFrame):
             self.current_page = PointsPage(self.content_area, self)
             self.current_page.pack(fill="both", expand=True)
 
-    def show_event_details(self, event):
+    def show_event_details(self, event_id):
         """Show event details page"""
         self.clear_content()
-        self.current_page = EventDetailsPage(self.content_area, self, event)
+        self.current_page = EventDetailsPage(self.content_area, self, event_id)
         self.current_page.pack(fill="both", expand=True)
     
-    def show_event_discussion(self, event):
+    def show_event_discussion(self, event_id):
         """Show event discussion page"""
         self.clear_content()
-        self.current_page = EventDiscussionPage(self.content_area, self, event)
+        self.current_page = EventDiscussionPage(self.content_area, self, event_id)
         self.current_page.pack(fill="both", expand=True)
     
     def show_invite_friends(self, event):

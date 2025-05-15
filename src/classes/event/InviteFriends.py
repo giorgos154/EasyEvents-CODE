@@ -56,3 +56,85 @@ class InviteFriends:
             return False
         finally:
             conn.close()
+
+    def load_user_invites(self, user_id):
+        """Get all pending invites for a user"""
+        conn = get_db_connection()
+        if not conn:
+            print("No database connection")
+            return []
+
+        try:
+            with conn.cursor() as cursor:
+                query = """
+                    SELECT i.invitation_id, i.event_id, i.sender_userid,
+                           u.username AS from_username,
+                           CONCAT(ui.first_name, ' ', ui.last_name) AS from_name,
+                           e.title AS event_title,
+                           e.event_date, e.venue AS event_location,
+                           i.sender_message AS message,
+                           i.status
+                    FROM invitations i
+                    JOIN users u ON i.sender_userid = u.user_id
+                    JOIN user_info ui ON u.user_id = ui.user_id
+                    JOIN events e ON i.event_id = e.event_id
+                    WHERE i.receipient_userid = %s
+                    AND i.status = 'pending'
+                    AND e.status = 'scheduled'
+                """
+                cursor.execute(query, (user_id,))
+                return cursor.fetchall()
+        except pymysql.Error as e:
+            print(f"Database Error in InviteFriends.load_user_invites: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def accept_invite(self, invitation_id):
+        """Accept an invitation and return the event_id"""
+        conn = get_db_connection()
+        if not conn:
+            print("No database connection")
+            return None
+
+        try:
+            with conn.cursor() as cursor:
+                # Update status
+                cursor.execute(
+                    "UPDATE invitations SET status = 'accepted' WHERE invitation_id = %s",
+                    (invitation_id,)
+                )
+                # Get event_id for redirection
+                cursor.execute(
+                    "SELECT event_id FROM invitations WHERE invitation_id = %s",
+                    (invitation_id,)
+                )
+                result = cursor.fetchone()
+                conn.commit()
+                return result['event_id'] if result else None
+        except pymysql.Error as e:
+            print(f"Database Error in InviteFriends.accept_invite: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def reject_invite(self, invitation_id):
+        """Reject an invitation"""
+        conn = get_db_connection()
+        if not conn:
+            print("No database connection")
+            return False
+
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE invitations SET status = 'rejected' WHERE invitation_id = %s",
+                    (invitation_id,)
+                )
+                conn.commit()
+                return True
+        except pymysql.Error as e:
+            print(f"Database Error in InviteFriends.reject_invite: {e}")
+            return False
+        finally:
+            conn.close()
