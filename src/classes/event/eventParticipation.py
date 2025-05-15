@@ -109,8 +109,18 @@ class EventParticipation:
 
     def rate_event(self, event_rating, organizer_rating, comment):
         """
-        Prosthiki vathmologias kai sxoliwn gia to event
+        Prosthiki vathmologias kai sxoliwn gia to event me validation
         """
+        # Validate inputs
+        if not isinstance(event_rating, int) or not isinstance(organizer_rating, int):
+            return False, "Please provide a valid rating and review"
+            
+        if event_rating < 1 or event_rating > 5 or organizer_rating < 1 or organizer_rating > 5:
+            return False, "Please provide a valid rating and review"
+            
+        if not comment or len(comment.strip()) == 0:
+            return False, "Please provide a valid rating and review"
+
         conn = get_db_connection()
         if not conn:
             return False, "Database connection failed"
@@ -128,7 +138,7 @@ class EventParticipation:
                     comment
                 ))
                 conn.commit()
-                return True, "Rating submitted successfully"
+                return True, "Success! Your review has been submitted"
         except Exception as e:
             return False, str(e)
         finally:

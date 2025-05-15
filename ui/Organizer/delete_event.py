@@ -59,7 +59,7 @@ class DeleteEventPage(ctk.CTkFrame):
             height=32,
             corner_radius=8,
             text_color="black",
-            command=self.dashboard.back_to_manage_events
+            command=lambda: self.dashboard.show_page("Manage Events")
         )
         back_btn.pack(side="left")
 

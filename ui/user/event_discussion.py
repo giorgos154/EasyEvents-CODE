@@ -13,7 +13,7 @@ class EventDiscussionPage(ctk.CTkFrame):
         self.discussion = EventDiscussion(event_id)
 
         if not self.event:
-            self.show_error("Event not found.")
+            self.show_error("Discussions are not available for this event.")
             return
 
         current_user = Auth.get_current_user()
@@ -129,9 +129,15 @@ class EventDiscussionPage(ctk.CTkFrame):
 
     def send_message(self):
         message = self.message_input.get("1.0", "end-1c").strip()
+        if not message:
+            self.show_error("Invalid message. Please enter a valid text.")
+            return
+            
         if self.discussion.add_message(self.user_id, message):
             self.message_input.delete("1.0", "end")
             self.load_messages()
+        else:
+            self.show_error("Invalid message. Please enter a valid text.")
 
     def show_error(self, message):
         dialog = ctk.CTkToplevel(self)
