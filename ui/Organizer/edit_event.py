@@ -1,27 +1,24 @@
 from datetime import datetime
 import customtkinter as ctk
-<<<<<<< HEAD
 from src.classes.event.event import Event
-=======
 import customtkinter.messagebox as messagebox
 from src.classes.event import Event
->>>>>>> abf4267b57b6d9cf32a3bae290b99e4258b12298
+
 
 class EditEventPage(ctk.CTkFrame):
     def __init__(self, master, dashboard, event_id):
         super().__init__(master, fg_color="white")
         self.dashboard = dashboard
-<<<<<<< HEAD
+
         self.event = Event.find_by_id(event_id)  
-=======
         self.event = Event.find_by_id(event_id)
->>>>>>> abf4267b57b6d9cf32a3bae290b99e4258b12298
+
 
         if not self.event:
             self.show_error("Event not found!")
             return
 
-<<<<<<< HEAD
+
         # Header
         self.header = ctk.CTkLabel(self, text="Edit Event", 
                                    font=ctk.CTkFont(family="Roboto", size=24, weight="bold"))
@@ -79,7 +76,7 @@ class EditEventPage(ctk.CTkFrame):
         updated_desc = self.desc_entry.get()
         
         # Validate date format
-=======
+
         self.original_values = {
             "title": self.event.title,
             "event_date": self.event.event_date.strftime('%Y-%m-%d %H:%M'),
@@ -249,14 +246,14 @@ class EditEventPage(ctk.CTkFrame):
             self.show_error("Cost must be a number.")
             return
 
->>>>>>> abf4267b57b6d9cf32a3bae290b99e4258b12298
+
         try:
             updated_date = datetime.strptime(updated_dt, '%Y-%m-%d %H:%M')
         except ValueError:
             self.show_error("Invalid date format. Please use 'YYYY-MM-DD HH:MM'.")
             return
 
-<<<<<<< HEAD
+
         # Check for duplicate event title
         if self.event.is_title_duplicate(updated_title):
             self.show_error("An event with this title already exists. Please choose a different title.")
@@ -273,7 +270,7 @@ class EditEventPage(ctk.CTkFrame):
             return
 
         # Update event object
-=======
+
         if updated_date < datetime.now():
             self.show_error("Event date and time must be in the future.")
             return
@@ -288,13 +285,12 @@ class EditEventPage(ctk.CTkFrame):
 
         is_paid = updated_cost > 0
 
-        # Update object
->>>>>>> abf4267b57b6d9cf32a3bae290b99e4258b12298
+
         self.event.title = updated_title
         self.event.event_date = updated_date
         self.event.venue = updated_location
         self.event.description = updated_desc
-<<<<<<< HEAD
+
         
         # Save event to database
         success, msg = self.event.update_event()
@@ -350,7 +346,7 @@ class EditEventPage(ctk.CTkFrame):
         # OK button
         ok_btn = ctk.CTkButton(success, text="OK", fg_color="#4CAF50", hover_color="#45a049", font=ctk.CTkFont(family="Roboto", size=14), width=100, command=success.destroy)
         ok_btn.pack(pady=20)
-=======
+
         self.event.visibility = updated_visibility
         self.event.category = updated_category
         self.event.max_participants = updated_max_participants
