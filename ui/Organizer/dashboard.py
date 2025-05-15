@@ -127,7 +127,11 @@ class OrganizerDashboard(ctk.CTkFrame):
             # -- Fortosi tis selidas diaxeirisis ekdiloseon -- #
             self.current_page = ManageEventsPage(self.content_area, self)
             self.current_page.pack(fill="both", expand=True)
-
+       else:
+        # Νέος χειρισμός με κλάση σελίδας και παραμέτρους
+        self.content_area.configure(fg_color="white")
+        self.current_page = page(self.content_area, self, **kwargs)
+        self.current_page.pack(fill="both", expand=True)
     def logout(self):
         """Diaxeirisi tis diadikasias logout"""
         from src.auth import Auth  
