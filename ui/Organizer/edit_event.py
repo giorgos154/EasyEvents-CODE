@@ -110,7 +110,7 @@ class EditEventPage(ctk.CTkFrame):
     def show_error(self, message):
         """Display error message in a dialog"""
         error = ctk.CTkToplevel(self)
-        error.title("Error")
+        error.title("Error!")
         error.geometry("300x150")
         error.transient(self)
         error.grab_set()
