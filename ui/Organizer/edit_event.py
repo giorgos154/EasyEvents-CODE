@@ -391,4 +391,4 @@ class EditEventPage(ctk.CTkFrame):
 
     def confirmation_dialog(self, message):
         return messagebox.askyesno("Confirm", message)
->>>>>>> abf4267b57b6d9cf32a3bae290b99e4258b12298
+
