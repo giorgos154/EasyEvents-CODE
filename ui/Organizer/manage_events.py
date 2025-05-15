@@ -175,7 +175,7 @@ class ManageEventsPage(ctk.CTkFrame):
                 width=120,
                 height=35,
                 corner_radius=8,
-                state="disabled" if event.status == 'cancelled' else "normal"
+                state="disabled" if event.status == 'cancelled' else "normal",
                 command=lambda e=event: self.dashboard.show_page(DeleteEventPage, event_id=e.event_id, organizer_id=self.dashboard.current_user.user_id)
             )
             cancel_btn.pack(pady=5)
