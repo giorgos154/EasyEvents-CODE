@@ -1,12 +1,14 @@
-# notification_service.py
 from datetime import datetime
+
 class NotificationService:
     """
-    NotificationService: Klasi gia tin apostoli eidopoiisewn. ta kanoume sto console
+    NotificationService: Κλάση για την αποστολή ειδοποιήσεων.
+    Οι ειδοποιήσεις προσομοιώνονται με εκτυπώσεις στο console.
     """
+
     @staticmethod
     def send_confirmation_email(user_email, event_title, event_date, event_venue):
-        """Prosomiwsi apostolis email epivevaiwsis egrafis se ekdilwsi"""
+        """Προσομοίωση αποστολής email επιβεβαίωσης εγγραφής σε εκδήλωση"""
         print(f"\n[EMAIL SIMULATION] Event Registration Confirmation")
         print(f"To: {user_email}")
         print(f"Subject: Successful registration for {event_title}")
@@ -20,7 +22,7 @@ class NotificationService:
     @staticmethod
     def notify_organizer(organizer_email, event_title, participant_username):
         """
-        Prosomiwsi eidopoiisis diorganwti gia nea symmetoxi.
+        Προσομοίωση ειδοποίησης διοργανωτή για νέα συμμετοχή.
         """
         print("\n[EMAIL SIMULATION] Notifying Organizer")
         print("-" * 50)
@@ -37,7 +39,7 @@ class NotificationService:
     @staticmethod
     def notify_check_in(organizer_email, event_title, attendee_name):
         """
-        Prosomiwsi eidopoiisis diorganwti gia check-in symmetexonta.
+        Προσομοίωση ειδοποίησης διοργανωτή για check-in συμμετέχοντα.
         """
         print("\n[EMAIL SIMULATION] Check-in Notification")
         print("-" * 50)
@@ -48,4 +50,16 @@ class NotificationService:
         print(f"{attendee_name} has checked in to your event!")
         print(f"Event: {event_title}")
         print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print("-" * 50)
+
+    @staticmethod
+    def notify_participants(event_title, message):
+        """
+        Προσομοίωση ειδοποίησης προς όλους τους συμμετέχοντες ενός event.
+        """
+        print("\n[NOTIFICATION SIMULATION] Notify Participants")
+        print("-" * 50)
+        print(f"Event: {event_title}")
+        print(f"Message: {message}")
+        print("All participants have been notified.")
         print("-" * 50)
