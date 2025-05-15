@@ -104,6 +104,61 @@ class EventParticipation:
             'event_date': event.event_date,
             'venue': event.venue,
             'attendee': attendee,
-            'check_in_time': datetime.now()
-
+        'check_in_time': datetime.now()
         }
+
+    def rate_event(self, event_rating, organizer_rating, comment):
+        """
+        Prosthiki vathmologias kai sxoliwn gia to event
+        """
+        conn = get_db_connection()
+        if not conn:
+            return False, "Database connection failed"
+
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO ratings (event_id, user_id, organizer_rating, event_rating, comment)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (
+                    self.event_id,
+                    self.user_id,
+                    organizer_rating,
+                    event_rating,
+                    comment
+                ))
+                conn.commit()
+                return True, "Rating submitted successfully"
+        except Exception as e:
+            return False, str(e)
+        finally:
+            cursor.close()
+            conn.close()
+            
+    @staticmethod
+    def get_unrated_events(user_id):
+        """
+        Epistrefi ola ta events pou o xristis exei symmetasxei alla den exei vathmologisei akoma
+        """
+        conn = get_db_connection()
+        if not conn:
+            return []
+
+        try:
+            with conn.cursor() as cursor:
+                query = """
+                SELECT e.event_id, e.title, e.event_date, e.venue
+                FROM events e
+                JOIN event_participations ep ON e.event_id = ep.event_id
+                WHERE ep.user_id = %s
+                AND NOT EXISTS (
+                    SELECT 1 FROM ratings r
+                    WHERE r.event_id = e.event_id AND r.user_id = %s
+                )
+                ORDER BY e.event_date DESC;
+                """
+                cursor.execute(query, (user_id, user_id))
+                return cursor.fetchall()
+        finally:
+            cursor.close()
+            conn.close()

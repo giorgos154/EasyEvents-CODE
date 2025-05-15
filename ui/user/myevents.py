@@ -93,7 +93,7 @@ class MyEventsPage(ctk.CTkFrame):
                 height=35,
                 corner_radius=8,
                 text_color="black",
-                command=lambda e=event: self.dashboard.show_event_discussion(e.event_id)
+            command=lambda e=event: self.dashboard.show_event_discussion(e.event_id)  # Unchanged, already using event_id
             )
             discussion_btn.pack(pady=(0,5))
             

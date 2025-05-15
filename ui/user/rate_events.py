@@ -29,26 +29,8 @@ class RateEventsPage(ctk.CTkFrame):
         self.load_events()
 
     def load_events(self):
-        conn = get_db_connection()
-        if not conn:
-            return
-        try:
-            with conn.cursor() as cursor:
-                query = """
-                SELECT e.event_id, e.title, e.event_date, e.venue
-                FROM events e
-                JOIN event_participations ep ON e.event_id = ep.event_id
-                WHERE ep.user_id = %s
-                AND NOT EXISTS (
-                    SELECT 1 FROM ratings r
-                    WHERE r.event_id = e.event_id AND r.user_id = %s
-                )
-                ORDER BY e.event_date DESC;
-                """
-                cursor.execute(query, (self.user_id, self.user_id))
-                self.events = cursor.fetchall()
-        finally:
-            conn.close()
+        from src.classes.event.eventParticipation import EventParticipation
+        self.events = EventParticipation.get_unrated_events(self.user_id)
 
         self.display_events()
 
@@ -103,7 +85,14 @@ class RateEventsPage(ctk.CTkFrame):
     def show_rating_dialog(self, event):
         dialog = ctk.CTkToplevel(self)
         dialog.title("Rate Event")
+        # Set initial size, then center
         dialog.geometry("400x400")
+        # Center the dialog but with larger dimensions
+        screen_width = dialog.winfo_screenwidth()
+        screen_height = dialog.winfo_screenheight()
+        x = (screen_width - 400) // 2
+        y = (screen_height - 400) // 2
+        dialog.geometry(f"400x400+{x}+{y}")
         dialog.transient(self)
         dialog.grab_set()
 
@@ -125,33 +114,62 @@ class RateEventsPage(ctk.CTkFrame):
             .pack(pady=20)
 
     def submit_review(self, event_id, dialog):
-        conn = get_db_connection()
-        if not conn:
-            return
+        from src.classes.event.eventParticipation import EventParticipation
+        
+        participation = EventParticipation(event_id, self.user_id)
+        success, message = participation.rate_event(
+            int(self.rating_event.get()),
+            int(self.rating_org.get()),
+            self.comment.get("1.0", "end").strip()
+        )
+        
+        if success:
+            dialog.destroy()
+            self.show_success("Success! Your review has been submitted.")
+            self.load_events()
+        else:
+            self.show_error(message)
 
-        try:
-            with conn.cursor() as cursor:
-                cursor.execute("""
-                    INSERT INTO ratings (event_id, user_id, organizer_rating, event_rating, comment)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (
-                    event_id,
-                    self.user_id,
-                    int(self.rating_org.get()),
-                    int(self.rating_event.get()),
-                    self.comment.get("1.0", "end").strip()
-                ))
-                conn.commit()
-        finally:
-            conn.close()
+    def center_dialog(self, dialog):
+        """Center a dialog window on the screen"""
+        screen_width = dialog.winfo_screenwidth()
+        screen_height = dialog.winfo_screenheight()
+        
+        dialog_width = 400
+        dialog_height = 150
+        
+        x = (screen_width - dialog_width) // 2
+        y = (screen_height - dialog_height) // 2
+        
+        dialog.geometry(f"400x150+{x}+{y}")
 
-        dialog.destroy()
-        self.load_events()
+    def show_success(self, message):
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Success")
+        self.center_dialog(dialog)
+        dialog.transient(self)
+        dialog.grab_set()
+
+        ctk.CTkLabel(
+            dialog,
+            text=message,
+            font=ctk.CTkFont(family="Roboto", size=16)
+        ).pack(expand=True)
+
+        ctk.CTkButton(
+            dialog,
+            text="OK",
+            fg_color="#4CAF50",
+            hover_color="#45a049",
+            font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
+            width=100,
+            command=dialog.destroy
+        ).pack(pady=20)
 
     def show_error(self, message):
         dialog = ctk.CTkToplevel(self)
         dialog.title("Error")
-        dialog.geometry("400x150")
+        self.center_dialog(dialog)
         dialog.transient(self)
         dialog.grab_set()
 

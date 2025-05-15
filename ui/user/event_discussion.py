@@ -1,13 +1,20 @@
 import customtkinter as ctk
 from datetime import datetime
-from src.db_connection import get_db_connection
 from src.auth import Auth
+from src.classes.event.event import Event
+from src.classes.event.eventDiscussion import EventDiscussion
 
 class EventDiscussionPage(ctk.CTkFrame):
-    def __init__(self, master, dashboard, event):
+    def __init__(self, master, dashboard, event_id):
         super().__init__(master, fg_color="white")
         self.dashboard = dashboard
-        self.event = event
+        self.event_id = event_id
+        self.event = Event.find_by_id(event_id)
+        self.discussion = EventDiscussion(event_id)
+
+        if not self.event:
+            self.show_error("Event not found.")
+            return
 
         current_user = Auth.get_current_user()
         self.user_id = current_user.user_id if current_user else None
@@ -19,7 +26,6 @@ class EventDiscussionPage(ctk.CTkFrame):
         self.load_messages()
 
     def build_ui(self):
-        
         header_frame = ctk.CTkFrame(self, fg_color="white")
         header_frame.pack(fill="x", padx=20, pady=20)
 
@@ -39,16 +45,15 @@ class EventDiscussionPage(ctk.CTkFrame):
 
         title = ctk.CTkLabel(
             header_frame,
-            text=self.event["title"],
+            text=self.event.title,
             font=ctk.CTkFont(family="Roboto", size=24, weight="bold")
         )
         title.pack(side="left", padx=20)
 
-
         self.messages_frame = ctk.CTkScrollableFrame(self, fg_color="white")
         self.messages_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
 
-        # εισαγωγή νέου μηνύματος
+        # Message input
         input_frame = ctk.CTkFrame(self, fg_color="white", height=100)
         input_frame.pack(fill="x", padx=20, pady=(0, 20))
         input_frame.pack_propagate(False)
@@ -78,28 +83,10 @@ class EventDiscussionPage(ctk.CTkFrame):
         send_btn.pack(side="right", pady=12.5)
 
     def load_messages(self):
-        # Φόρτωση μηνυμάτων από τη βάση
-        conn = get_db_connection()
-        if not conn:
-            return
-
-        try:
-            with conn.cursor() as cursor:
-                cursor.execute("""
-                    SELECT d.message_text, d.timestamp, u.username
-                    FROM discussions d
-                    JOIN users u ON d.user_id = u.user_id
-                    WHERE d.event_id = %s
-                    ORDER BY d.timestamp ASC
-                """, (self.event["event_id"],))
-                self.messages = cursor.fetchall()
-        finally:
-            conn.close()
-
+        self.messages = self.discussion.load_messages()
         self.display_messages()
 
     def display_messages(self):
-        # Εμφάνιση όλων των μηνυμάτων
         for widget in self.messages_frame.winfo_children():
             widget.destroy()
 
@@ -138,36 +125,15 @@ class EventDiscussionPage(ctk.CTkFrame):
             separator = ctk.CTkFrame(msg_frame, height=1, fg_color="#E5E5E5")
             separator.pack(fill="x", pady=(0, 5))
 
-
         self.messages_frame._parent_canvas.yview_moveto(1.0)
 
     def send_message(self):
-        #Λήψη κειμένου από input
         message = self.message_input.get("1.0", "end-1c").strip()
-        if not message:
-            return
-
-        #Αποθήκευση νέου μηνύματος στη βάση
-        conn = get_db_connection()
-        if not conn:
-            return
-
-        try:
-            with conn.cursor() as cursor:
-                cursor.execute("""
-                    INSERT INTO discussions (event_id, user_id, message_text)
-                    VALUES (%s, %s, %s)
-                """, (self.event["event_id"], self.user_id, message))
-                conn.commit()
-        finally:
-            conn.close()
-
-        
-        self.message_input.delete("1.0", "end")
-        self.load_messages()
+        if self.discussion.add_message(self.user_id, message):
+            self.message_input.delete("1.0", "end")
+            self.load_messages()
 
     def show_error(self, message):
-        # Εμφάνιση σφάλματος
         dialog = ctk.CTkToplevel(self)
         dialog.title("Error")
         dialog.geometry("400x150")
