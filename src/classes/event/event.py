@@ -163,6 +163,7 @@ class Event:
             query = """
                 SELECT * FROM events 
                 WHERE organizer_id = %s 
+                AND DATE(event_date) >= CURDATE()
                 ORDER BY event_date ASC
             """
             cursor.execute(query, (organizer_id,))
