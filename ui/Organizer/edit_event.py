@@ -1,6 +1,6 @@
 from datetime import datetime
 import customtkinter as ctk
-from src.classes.event import Event  
+from src.classes.event.event import Event
 
 class EditEventPage(ctk.CTkFrame):
     def __init__(self, master, dashboard, event_id):
@@ -104,8 +104,8 @@ class EditEventPage(ctk.CTkFrame):
             self.show_error(msg)
     
     def cancel_edit(self):
-        # Simply go back to the previous page
-        self.dashboard.show_previous_page()
+        # Go back to Manage Events page
+        self.dashboard.show_page("Manage Events")
 
     def show_error(self, message):
         """Display error message in a dialog"""

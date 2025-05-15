@@ -111,21 +111,24 @@ class OrganizerDashboard(ctk.CTkFrame):
             self.current_page.destroy()
         self.welcome_frame.place_forget()
 
- def show_page(self, page_name):
+    def show_page(self, page_class_or_name, **kwargs):
         """Enallagi metaxi selidon"""
         self.clear_content()
-
-        if page_name == "Homepage":
-            # -- Allagí background se mauro gia tin arxiki -- #
-            self.content_area.configure(fg_color="black")
-            # -- Emfanisi tis arxikis selidas -- #
-            self.welcome_frame.place(relx=0.5, rely=0.5, anchor="center")
-            self.current_page = None
-        elif page_name == "Manage Events":
-            # -- Allagi background se leuko gia ta events -- #
+        
+        if isinstance(page_class_or_name, str):
+            # Handle string page names (Homepage, Manage Events)
+            if page_class_or_name == "Homepage":
+                self.content_area.configure(fg_color="black")
+                self.welcome_frame.place(relx=0.5, rely=0.5, anchor="center")
+                self.current_page = None
+            elif page_class_or_name == "Manage Events":
+                self.content_area.configure(fg_color="white")
+                self.current_page = ManageEventsPage(self.content_area, self)
+                self.current_page.pack(fill="both", expand=True)
+        else:
+            # Handle page classes (EditEventPage, etc.)
             self.content_area.configure(fg_color="white")
-            # -- Fortosi tis selidas diaxeirisis ekdiloseon -- #
-            self.current_page = ManageEventsPage(self.content_area, self)
+            self.current_page = page_class_or_name(self.content_area, self, **kwargs)
             self.current_page.pack(fill="both", expand=True)
    
     def logout(self):

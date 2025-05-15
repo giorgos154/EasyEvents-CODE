@@ -31,8 +31,11 @@ class RateEventsPage(ctk.CTkFrame):
     def load_events(self):
         from src.classes.event.eventParticipation import EventParticipation
         self.events = EventParticipation.get_unrated_events(self.user_id)
-
-        self.display_events()
+        
+        if not self.events:
+            self.show_error("There are no events available for review.")
+        else:
+            self.display_events()
 
     def display_events(self):
         for widget in self.events_frame.winfo_children():
@@ -116,16 +119,29 @@ class RateEventsPage(ctk.CTkFrame):
     def submit_review(self, event_id, dialog):
         from src.classes.event.eventParticipation import EventParticipation
         
+        try:
+            event_rating = int(self.rating_event.get())
+            organizer_rating = int(self.rating_org.get())
+        except ValueError:
+            self.show_error("Please provide a valid rating and review")
+            return
+            
+        comment = self.comment.get("1.0", "end").strip()
+        
+        if not event_rating or not organizer_rating or not comment:
+            self.show_error("Please provide a valid rating and review")
+            return
+            
         participation = EventParticipation(event_id, self.user_id)
         success, message = participation.rate_event(
-            int(self.rating_event.get()),
-            int(self.rating_org.get()),
-            self.comment.get("1.0", "end").strip()
+            event_rating,
+            organizer_rating,
+            comment
         )
         
         if success:
             dialog.destroy()
-            self.show_success("Success! Your review has been submitted.")
+            self.show_success(message)
             self.load_events()
         else:
             self.show_error(message)
