@@ -212,3 +212,4 @@ class ManageEventsPage(ctk.CTkFrame):
         
         create_page = CreateEventPage(self.master, self.dashboard)
         create_page.pack(fill="both", expand=True)
+
