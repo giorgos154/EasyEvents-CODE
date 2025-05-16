@@ -210,5 +210,6 @@ class ManageEventsPage(ctk.CTkFrame):
         for widget in self.master.winfo_children():
             widget.destroy()
         
-        create_page = CreateEventPage(self.master, self)
+        create_page = CreateEventPage(self.master, self, self.dashboard.current_user)
         create_page.pack(fill="both", expand=True)
+
