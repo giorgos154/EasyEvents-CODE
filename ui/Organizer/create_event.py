@@ -1,13 +1,15 @@
-import datetime
+
+from datetime import datetime
 import tkinter.messagebox as messagebox
 import customtkinter as ctk
 from src.classes.event.event import Event
 
 class CreateEventPage(ctk.CTkFrame):
-    def __init__(self, master, manage_page):
+    def __init__(self, master, manage_page, current_user):
         # -- Dimiourgia tou vasikou frame gia ti selida dimiourgias event -- #
         super().__init__(master, fg_color="transparent")
         self.manage_page = manage_page
+        self.current_user = current_user
         self.current_step = 0
         
         # -- Lista me ta vimata tis formas -- #
@@ -757,32 +759,46 @@ class CreateEventPage(ctk.CTkFrame):
         """
         # -- Ενημέρωση των δεδομένων της φόρμας ανά βήμα -- #
         """
-        if self.current_step == 0:
-            self.form_data["title"] = self.title_entry.get()
-            self.form_data["description"] = self.desc_text.get("1.0", "end-1c")
-            self.form_data["date"] = self.date_entry.get()
-            self.form_data["time"] = self.time_entry.get()
+        try:
+            if self.current_step == 0:
+                if hasattr(self, "title_entry"):
+                    self.form_data["title"] = self.title_entry.get()
+                if hasattr(self, "desc_text"):
+                    self.form_data["description"] = self.desc_text.get("1.0", "end-1c")
+                if hasattr(self, "date_entry"):
+                    self.form_data["date"] = self.date_entry.get()
+                if hasattr(self, "time_entry"):
+                    self.form_data["time"] = self.time_entry.get()
 
-        elif self.current_step == 1:
-            self.form_data["location"] = self.location_entry.get()
-            self.form_data["event_type"] = self.event_type_var.get()
+            elif self.current_step == 1:
+                if hasattr(self, "location_entry"):
+                    self.form_data["location"] = self.location_entry.get()
+                if hasattr(self, "event_type_var"):
+                    self.form_data["event_type"] = self.event_type_var.get()
 
-        elif self.current_step == 2:
-            self.form_data["max_participants"] = self.capacity_entry.get()
-            self.form_data["is_paid"] = self.is_paid_var.get()
-            self.form_data["price"] = self.price_entry.get() if self.is_paid_var.get() else "0"
-            
-        elif self.current_step == 4:
-            # Ενημέρωση ρυθμίσεων ειδοποιήσεων
-            self.form_data.setdefault("notification_settings", {})
-            self.form_data["notification_settings"]["target"] = self.target_var.get()
-            selected_timings = [
-                timing for timing, var in self.timing_vars.items() if var.get()
-            ]
-            self.form_data["notification_settings"]["timing"] = selected_timings
+            elif self.current_step == 2:
+                if hasattr(self, "capacity_entry"):
+                    self.form_data["max_participants"] = self.capacity_entry.get()
+                if hasattr(self, "is_paid_var"):
+                    self.form_data["is_paid"] = self.is_paid_var.get()
+                if hasattr(self, "price_entry") and self.is_paid_var.get():
+                    self.form_data["price"] = self.price_entry.get()
+                else:
+                    self.form_data["price"] = "0"
+                # Αν έχεις ξεχωριστή μέθοδο για payment methods, κάλεσέ την εδώ
 
-        else:
-            pass  
+            elif self.current_step == 4:
+                self.form_data.setdefault("notification_settings", {})
+                if hasattr(self, "target_var"):
+                    self.form_data["notification_settings"]["target"] = self.target_var.get()
+                if hasattr(self, "timing_vars"):
+                    selected_timings = [timing for timing, var in self.timing_vars.items() if var.get()]
+                    self.form_data["notification_settings"]["timing"] = selected_timings
+
+            # Άλλα βήματα που δεν αποθηκεύουν δεδομένα, δεν κάνουμε τίποτα
+
+        except Exception as e:
+            print(f"[ERROR] update_form_data: {e}")
 
 
     def show_date_picker(self, event):
@@ -1011,7 +1027,7 @@ class CreateEventPage(ctk.CTkFrame):
             if not capacity.isdigit() or int(capacity) <= 0:
                 return "Εισάγετε έγκυρο αριθμό συμμετεχόντων."
 
-            # Έλεγχος τοποθεσίας από form_data 
+            # Έλεγχος τοποθεσίας από form_data (είναι ήδη ελεγχθεί)
             location = self.form_data.get("location", "").strip()
             if not location:
                 return "Παρακαλώ εισάγετε τοποθεσία εκδήλωσης."
@@ -1027,7 +1043,7 @@ class CreateEventPage(ctk.CTkFrame):
                 except Exception:
                     return "Παρακαλώ εισάγετε έγκυρη τιμή."
 
-        return None  
+        return None  # Όλα οκ
 
 
 
@@ -1065,26 +1081,33 @@ class CreateEventPage(ctk.CTkFrame):
             self.next_btn.configure(text="Next →")
     
     def next_step(self):
+        # Πάρε πρώτα τα δεδομένα από την τρέχουσα φόρμα
         self.update_form_data()
 
+        # Έλεγξε για λάθη
         error = self.validate_event_data()
         if error:
-            self.show_error(error)  # Εμφάνιση popup με το λάθος
-            return  # Μπλοκάρει τη μετάβαση λόγω λάθους
+            self.show_error(error)  # Εμφάνιση λάθους
+            return  # Σταμάτα εδώ
 
-        # Καθαρίζουμε τυχόν προηγούμενα errors (αν υπάρχει ακόμα)
+        # Καθάρισε το error label αν υπάρχει
         if hasattr(self, "error_label") and self.error_label.winfo_exists():
             self.error_label.configure(text="")
 
         if self.current_step < len(self.steps) - 1:
+            # Πήγαινε στο επόμενο βήμα
             self.current_step += 1
             self.show_current_step()
         else:
+            # Τελευταίο βήμα: επιβεβαίωση πληρωμών
             if self.is_paid_var.get() and not self.form_data.get("payment_methods"):
                 self.show_error("Please select at least one payment method")
                 return
 
-            self.save_event()   
+            # Αποθήκευση event
+            self.save_event()
+
+
 
 
 
@@ -1119,12 +1142,14 @@ class CreateEventPage(ctk.CTkFrame):
         # -- Epanafora tis selidas diaxeirisis -- #
         manage_page = self.manage_page.__class__(self.master, self.manage_page.dashboard)
         manage_page.pack(fill="both", expand=True)
+    from datetime import datetime
+
     def save_event(self):
         """
         Αποθηκεύει την εκδήλωση αφού έχουν περάσει τα validations.
         Εμφανίζει σφάλμα μόνο σε περίπτωση αποτυχίας επικοινωνίας με τη βάση ή αποσύνδεσης από το internet.
         """
-        from src.classes.event import Event
+        from src.classes.event.event import Event
         import socket
 
         try:
@@ -1134,19 +1159,47 @@ class CreateEventPage(ctk.CTkFrame):
             self.show_error("Δεν υπάρχει σύνδεση στο internet. Παρακαλώ δοκιμάστε ξανά.")
             return
 
+        # Παίρνουμε τα δεδομένα από self.form_data (πρέπει να είναι ενημερωμένη)
+        title = self.form_data.get("title", "").strip()
+        description = self.form_data.get("description", "").strip()
+        category = self.form_data.get("category", "").strip()
+        date_str = self.form_data.get("date", "").strip()
+        time_str = self.form_data.get("time", "").strip()
+        venue = self.form_data.get("venue", "").strip()
+        is_public = self.form_data.get("is_public", False)
+        max_participants = self.form_data.get("max_participants")
+        is_paid = self.form_data.get("is_paid", False)
+        cost = self.form_data.get("cost", 0.0)
+        payment_method = self.form_data.get("payment_method") if is_paid else None
+
+        # Συνένωση ημερομηνίας & ώρας σε datetime object
+        try:
+            event_datetime = datetime.strptime(f"{date_str} {time_str}", "%m/%d/%Y %H:%M")
+        except ValueError:
+            self.show_error("Μη έγκυρη ημερομηνία ή ώρα.")
+            return
+
+        # Μετατροπή αριθμητικών πεδίων
+        try:
+            max_participants = int(max_participants) if max_participants else None
+            cost = float(cost) if cost else 0.0
+        except ValueError:
+            self.show_error("Μη έγκυρη τιμή για αριθμητικά πεδία.")
+            return
+
         new_event = Event(
             event_id=None,
-            organizer_id=self.current_user.id,
-            title=self.title_entry.get().strip(),
-            description=self.description_entry.get().strip(),
-            category=self.category_combobox.get(),
-            event_date=datetime.strptime(self.date_entry.get().strip(), "%Y-%m-%d %H:%M"),
-            venue=self.venue_entry.get().strip(),
-            is_public=self.is_public_var.get(),
-            max_participants=int(self.max_participants_entry.get()) if self.max_participants_entry.get() else None,
-            is_paid=self.is_paid_var.get(),
-            cost=float(self.cost_entry.get()) if self.cost_entry.get() else 0.0,
-            payment_method=self.payment_method_combobox.get() if self.is_paid_var.get() else None,
+            organizer_id=self.current_user.user_id,
+            title=title,
+            description=description,
+            category=category,
+            event_date=event_datetime,
+            venue=venue,
+            is_public=is_public,
+            max_participants=max_participants,
+            is_paid=is_paid,
+            cost=cost,
+            payment_method=payment_method,
             status="scheduled"
         )
 
@@ -1157,5 +1210,6 @@ class CreateEventPage(ctk.CTkFrame):
             self.cancel_creation()
         else:
             self.show_error(f"Αποτυχία επικοινωνίας με τη βάση: {result}")
+
 
 
