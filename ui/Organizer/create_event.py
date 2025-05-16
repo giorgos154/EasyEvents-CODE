@@ -1,7 +1,7 @@
 import datetime
 import tkinter.messagebox as messagebox
 import customtkinter as ctk
-from classes.event.event import Event
+from src.classes.event.event import Event
 
 class CreateEventPage(ctk.CTkFrame):
     def __init__(self, master, manage_page):
