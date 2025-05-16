@@ -172,7 +172,7 @@ class EditEventPage(ctk.CTkFrame):
             return
 
         if updated_max_participants < current_participants:
-            self.show_error(f"The number of participants ({current_participants}) exceeds the new max participants.")
+            self.show_error(f"The new maximum number of participants cannot be less than the number of current participants ({current_participants}).")
             return
 
         if updated_cost < 0:

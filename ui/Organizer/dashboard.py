@@ -106,10 +106,12 @@ class OrganizerDashboard(ctk.CTkFrame):
         self.welcome_text.pack(pady=10)
 
     def clear_content(self):
-        """Katharismos tis perioxi periexomenou"""
-        if self.current_page is not None:
-            self.current_page.destroy()
-        self.welcome_frame.place_forget()
+        """Completely empty out the content area."""
+        for widget in self.content_area.winfo_children():
+            widget.destroy()
+        self.current_page = None
+
+
 
     def show_page(self, page_class_or_name, **kwargs):
         """Enallagi metaxi selidon"""

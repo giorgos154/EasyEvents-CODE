@@ -1,14 +1,28 @@
 import datetime
 import tkinter.messagebox as messagebox
 import customtkinter as ctk
-from src.classes.event.event import Event
+from tkinter.messagebox import askyesno
+from src.classes.event.ManageEvent import ManageEvent
 
 class CreateEventPage(ctk.CTkFrame):
-    def __init__(self, master, manage_page):
+    def __init__(self, master, dashboard):
         # -- Dimiourgia tou vasikou frame gia ti selida dimiourgias event -- #
         super().__init__(master, fg_color="transparent")
-        self.manage_page = manage_page
+        self.dashboard = dashboard
+        self.master = master  # Store master reference
+
+        # Store user info explicitly and validate
+        # Validate dashboard and current_user
+        if not hasattr(dashboard, 'current_user') or dashboard.current_user is None:
+            raise ValueError("No active user session. Please log in again.")
+        if not hasattr(dashboard.current_user, 'user_id'):
+            raise ValueError("Invalid user session. Please log in again.")
+            
+        self.current_user = dashboard.current_user
         self.current_step = 0
+
+        # Bind to master events
+        self.bind("<Destroy>", self.on_destroy)
         
         # -- Lista me ta vimata tis formas -- #
         self.steps = [
@@ -196,7 +210,11 @@ class CreateEventPage(ctk.CTkFrame):
             self.content_frame,
             placeholder_text="Enter event title",
             width=400,
-            height=35
+            height=35,
+            border_width=2,
+            border_color="#C8A165",
+            fg_color="white",
+            corner_radius=8
         )
         self.title_entry.pack(anchor="w", pady=(0, 20))
         self.title_entry.insert(0, self.form_data.get("title", ""))
@@ -214,9 +232,10 @@ class CreateEventPage(ctk.CTkFrame):
             self.content_frame,
             width=400,
             height=100,
-            border_width=1,
-            border_color="#E5E5E5",
-            fg_color="white"
+            border_width=2,
+            border_color="#C8A165",
+            fg_color="white",
+            corner_radius=8
         )
         self.desc_text.pack(anchor="w", pady=(0, 20))
         self.desc_text.insert("1.0", self.form_data.get("description", ""))
@@ -242,9 +261,10 @@ class CreateEventPage(ctk.CTkFrame):
             placeholder_text="Click to select date",
             width=200,
             height=35,
-            border_width=1,
-            border_color="#E5E5E5",
+            border_width=2,
+            border_color="#C8A165",
             fg_color="white",
+            corner_radius=8,
             state="readonly"
         )
         self.date_entry.pack(anchor="w")
@@ -281,9 +301,10 @@ class CreateEventPage(ctk.CTkFrame):
             placeholder_text="Click to select time",
             width=200,
             height=35,
-            border_width=1,
-            border_color="#E5E5E5",
+            border_width=2,
+            border_color="#C8A165",
             fg_color="white",
+            corner_radius=8,
             state="readonly"
         )
         self.time_entry.pack(anchor="w")
@@ -514,26 +535,43 @@ class CreateEventPage(ctk.CTkFrame):
             )
             self.checkboxes_frame.pack(fill="x", padx=5)
             
-            # Payment methods options
-            methods = ["Credit Card", "Bank Transfer", "Cryptocurrency"]
-            self.payment_methods_vars = {}
+            # Payment methods options using radiobuttons
+            methods_label = ctk.CTkLabel(
+                self.payment_methods_frame,
+                text="Select Payment Method",
+                font=ctk.CTkFont(family="Roboto", size=14),
+                text_color="black"
+            )
+            methods_label.pack(anchor="w", pady=(0, 10))
+
+            methods = [
+                ("Credit Card", "credit_card"),
+                ("Bank Transfer", "bank_transfer"),
+                ("Cryptocurrency", "cryptocurrency")
+            ]
+            
+            stored_payment_method = self.form_data.get("payment_method")
+            if stored_payment_method and stored_payment_method in ["credit_card", "bank_transfer", "cryptocurrency"]:
+                default_method = stored_payment_method
+            else:
+                default_method = "credit_card"
+                
+            self.payment_method_var = ctk.StringVar(value=default_method)
             
             methods_frame = ctk.CTkFrame(self.checkboxes_frame, fg_color="transparent")
             methods_frame.pack(fill="x", padx=10, pady=10)
             
-            for method in methods:
-                var = ctk.BooleanVar(value=method in self.form_data["payment_methods"])
-                checkbox = ctk.CTkCheckBox(
+            for display_text, value in methods:
+                radio = ctk.CTkRadioButton(
                     methods_frame,
-                    text=method,
+                    text=display_text,
                     font=ctk.CTkFont(family="Roboto", size=14),
-                    variable=var,
+                    variable=self.payment_method_var,
+                    value=value,
                     fg_color="#C8A165",
-                    hover_color="#b38e58",
-                    command=self.update_payment_methods
+                    hover_color="#b38e58"
                 )
-                checkbox.pack(anchor="w", pady=(0, 5))
-                self.payment_methods_vars[method] = var
+                radio.pack(anchor="w", pady=(0, 5))
         else:
             # Hide price field
             self.price_entry.configure(state="disabled")
@@ -578,8 +616,14 @@ class CreateEventPage(ctk.CTkFrame):
         
         if self.form_data["is_paid"]:
             details.append(("Price:", f"€{self.form_data['price']}"))
-            if self.form_data["payment_methods"]:
-                details.append(("Payment Methods:", ", ".join(self.form_data["payment_methods"])))
+            if hasattr(self, 'payment_method_var'):
+                method_display = {
+                    'credit_card': 'Credit Card',
+                    'bank_transfer': 'Bank Transfer',
+                    'cryptocurrency': 'Cryptocurrency'
+                }
+                payment_method = method_display.get(self.payment_method_var.get(), self.payment_method_var.get())
+                details.append(("Payment Method:", payment_method))
 
         # -- Add Files Info -- #
         if self.form_data["uploaded_files"]:
@@ -771,6 +815,8 @@ class CreateEventPage(ctk.CTkFrame):
             self.form_data["max_participants"] = self.capacity_entry.get()
             self.form_data["is_paid"] = self.is_paid_var.get()
             self.form_data["price"] = self.price_entry.get() if self.is_paid_var.get() else "0"
+            if hasattr(self, 'payment_method_var'):
+                self.form_data["payment_method"] = self.payment_method_var.get()
             
         elif self.current_step == 4:
             # Ενημέρωση ρυθμίσεων ειδοποιήσεων
@@ -849,105 +895,127 @@ class CreateEventPage(ctk.CTkFrame):
 
     def show_time_picker(self, event):
         """
-        # -- Εμφάνιση του picker για επιλογή ώρας -- #
+        Show a simplified time picker with common time slots
         """
-        import datetime
-        
         time_picker = ctk.CTkToplevel(self)
         time_picker.title("Select Time")
-        time_picker.geometry("300x400")
+        time_picker.geometry("250x300")
         time_picker.transient(self)
         time_picker.grab_set()
         
-        container = ctk.CTkScrollableFrame(time_picker)
+        # Center the window
+        time_picker.update_idletasks()
+        x = (time_picker.winfo_screenwidth() - time_picker.winfo_width()) // 2
+        y = (time_picker.winfo_screenheight() - time_picker.winfo_height()) // 2
+        time_picker.geometry(f"+{x}+{y}")
+        
+        container = ctk.CTkFrame(time_picker, fg_color="transparent")
         container.pack(fill="both", expand=True, padx=10, pady=10)
         
-        hours_frame = ctk.CTkFrame(container)
-        hours_frame.pack(pady=10, fill="x")
+        # Common time slots section
+        presets_label = ctk.CTkLabel(container, text="Quick Selection", font=ctk.CTkFont(size=14, weight="bold"))
+        presets_label.pack(pady=(0, 10))
         
-        hours_label = ctk.CTkLabel(hours_frame, text="Hour")
-        hours_label.pack()
+        presets = [
+            ("Morning", "09:00"),
+            ("Noon", "12:00"),
+            ("Afternoon", "15:00"),
+            ("Evening", "18:00"),
+            ("Night", "20:00")
+        ]
         
-        hours = ctk.CTkScrollableFrame(hours_frame, width=100, height=200)
-        hours.pack()
-        
-        minutes_frame = ctk.CTkFrame(container)
-        minutes_frame.pack(pady=10, fill="x")
-        
-        minutes_label = ctk.CTkLabel(minutes_frame, text="Minute")
-        minutes_label.pack()
-        
-        minutes = ctk.CTkScrollableFrame(minutes_frame, width=100, height=200)
-        minutes.pack()
-        
-        selected_hour = ctk.StringVar()
-        selected_minute = ctk.StringVar()
-        
-        # Αν υπάρχει ήδη ώρα, την βάζουμε στις μεταβλητές
-        try:
-            time_parts = self.form_data.get("time", "").split(":")
-            if len(time_parts) == 2:
-                selected_hour.set(time_parts[0])
-                selected_minute.set(time_parts[1])
-        except Exception:
-            pass
-        
-        def on_time_select():
-            hour_val = selected_hour.get()
-            minute_val = selected_minute.get()
-            if not hour_val or not minute_val:
-                ctk.CTkLabel(time_picker, text="Please select both hour and minute.", text_color="red").pack()
-                return
+        # Create buttons for presets
+        for label, time_value in presets:
+            btn = ctk.CTkButton(
+                container,
+                text=f"{label} ({time_value})",
+                fg_color="#C8A165",
+                text_color="black",
+                hover_color="#b38e58",
+                command=lambda t=time_value: self.set_time(t, time_picker)
+            )
+            btn.pack(pady=2, fill="x")
             
-            time_str = f"{hour_val}:{minute_val}"
-            self.time_entry.configure(state="normal")
-            self.time_entry.delete(0, "end")
-            self.time_entry.insert(0, time_str)
-            self.time_entry.configure(state="readonly")
-            self.form_data["time"] = time_str  # Ενημέρωση form_data
-            time_picker.destroy()
+        separator = ctk.CTkFrame(container, height=2, fg_color="#E5E5E5")
+        separator.pack(fill="x", pady=10)
+            
+        # Custom time selection
+        custom_label = ctk.CTkLabel(container, text="Custom Time", font=ctk.CTkFont(size=14, weight="bold"))
+        custom_label.pack(pady=(0, 10))
         
-        # Δημιουργία κουμπιών ώρας
-        for h in range(24):
-            hour = f"{h:02d}"
-            fg_color = "#C8A165" if selected_hour.get() == hour else ("#E5E5E5" if h % 2 == 0 else "transparent")
-            btn = ctk.CTkButton(
-                hours,
-                text=hour,
-                width=70,
-                height=30,
-                fg_color=fg_color,
-                text_color="black",
-                hover_color="#b38e58",
-                command=lambda h=hour: selected_hour.set(h)
-            )
-            btn.pack(pady=2)
+        # Time selection frame
+        time_frame = ctk.CTkFrame(container, fg_color="transparent")
+        time_frame.pack(fill="x")
         
-        # Δημιουργία κουμπιών λεπτών (ανά λεπτό)
-        for m in range(60):  # 0-59
-            minute = f"{m:02d}"
-            fg_color = "#C8A165" if selected_minute.get() == minute else ("#E5E5E5" if m % 10 == 0 else "transparent")
-            btn = ctk.CTkButton(
-                minutes,
-                text=minute,
-                width=70,
-                height=30,
-                fg_color=fg_color,
-                text_color="black",
-                hover_color="#b38e58",
-                command=lambda m=minute: selected_minute.set(m)
-            )
-            btn.pack(pady=2)
+        # Hour selection
+        hour_var = ctk.StringVar()
+        hour_menu = ctk.CTkOptionMenu(
+            time_frame,
+            values=[f"{h:02d}" for h in range(24)],
+            variable=hour_var,
+            fg_color="#E5E5E5",
+            text_color="black",
+            button_color="#C8A165",
+            button_hover_color="#b38e58",
+            width=70
+        )
+        hour_menu.pack(side="left", padx=5)
         
-        select_btn = ctk.CTkButton(
+        # Separator label
+        ctk.CTkLabel(time_frame, text=":", font=ctk.CTkFont(size=16, weight="bold")).pack(side="left")
+        
+        # Minute selection
+        minute_var = ctk.StringVar()
+        minute_menu = ctk.CTkOptionMenu(
+            time_frame,
+            values=[f"{m:02d}" for m in range(0, 60, 15)],
+            variable=minute_var,
+            fg_color="#E5E5E5",
+            text_color="black",
+            button_color="#C8A165",
+            button_hover_color="#b38e58",
+            width=70
+        )
+        minute_menu.pack(side="left", padx=5)
+        
+        # Set button for custom time
+        def set_custom_time():
+            if hour_var.get() and minute_var.get():
+                self.set_time(f"{hour_var.get()}:{minute_var.get()}", time_picker)
+            else:
+                error_label.configure(text="Please select both hour and minute")
+                
+        set_btn = ctk.CTkButton(
             container,
-            text="Select",
+            text="Set Time",
             fg_color="#C8A165",
             text_color="black",
             hover_color="#b38e58",
-            command=on_time_select
+            command=set_custom_time
         )
-        select_btn.pack(pady=10)
+        set_btn.pack(pady=10, fill="x")
+        
+        # Error label
+        error_label = ctk.CTkLabel(container, text="", text_color="red")
+        error_label.pack()
+        
+        # Try to set initial values if time exists
+        try:
+            current_time = self.form_data.get("time", "").split(":")
+            if len(current_time) == 2:
+                hour_var.set(current_time[0])
+                minute_var.set(current_time[1])
+        except Exception:
+            pass
+            
+    def set_time(self, time_str, picker):
+        """Helper method to set time and close picker"""
+        self.time_entry.configure(state="normal")
+        self.time_entry.delete(0, "end")
+        self.time_entry.insert(0, time_str)
+        self.time_entry.configure(state="readonly")
+        self.form_data["time"] = time_str
+        picker.destroy()
         
     
     
@@ -1080,8 +1148,8 @@ class CreateEventPage(ctk.CTkFrame):
             self.current_step += 1
             self.show_current_step()
         else:
-            if self.is_paid_var.get() and not self.form_data.get("payment_methods"):
-                self.show_error("Please select at least one payment method")
+            if self.is_paid_var.get() and not hasattr(self, 'payment_method_var'):
+                self.show_error("Please select a payment method")
                 return
 
             self.save_event()   
@@ -1109,53 +1177,82 @@ class CreateEventPage(ctk.CTkFrame):
 
 
     def cancel_creation(self):
-        """
-        # -- Epistrofi stin arxiki selida diaxeirisis events -- #
-        """
-        # -- Katharismos tis trexousas selidas -- #
-        for widget in self.master.winfo_children():
-            widget.destroy()
-        
-        # -- Epanafora tis selidas diaxeirisis -- #
-        manage_page = self.manage_page.__class__(self.master, self.manage_page.dashboard)
-        manage_page.pack(fill="both", expand=True)
+        if askyesno(
+            title="Cancel Creation",
+            message="Are you sure you want to cancel? All entered data will be lost."
+        ):
+            # destroy any toplevels
+            for widget in self.winfo_children():
+                if isinstance(widget, ctk.CTkToplevel):
+                    widget.destroy()
+            # clear data
+            self.form_data = {key: "" for key in self.form_data}
+            # go back
+            self.dashboard.show_page("Manage Events")
+
+    def on_destroy(self, event=None):
+        """Cleanup when frame is destroyed"""
+        if event.widget == self:
+            # Clear any active toplevel windows
+            for widget in self.winfo_children():
+                if isinstance(widget, ctk.CTkToplevel):
+                    widget.destroy()
+            
+            # Return focus to dashboard
+            if hasattr(self, 'dashboard'):
+                self.dashboard.focus_set()
+    
+    def _validate_user(self):
+        """Check if we have a valid user session"""
+        if not hasattr(self, 'current_user') or self.current_user is None:
+            self.show_error("No active user session. Please log in again.")
+            return False
+        if not hasattr(self.current_user, 'user_id'):
+            self.show_error("Invalid user session. Please log in again.")
+            return False
+        return True
+
     def save_event(self):
         """
         Αποθηκεύει την εκδήλωση αφού έχουν περάσει τα validations.
-        Εμφανίζει σφάλμα μόνο σε περίπτωση αποτυχίας επικοινωνίας με τη βάση ή αποσύνδεσης από το internet.
         """
-        from src.classes.event import Event
-        import socket
+        # Check for valid user first
+        if not self._validate_user():
+            return
 
+        import socket
         try:
-            # Έλεγχος σύνδεσης στο internet (π.χ. ping σε Google DNS)
             socket.create_connection(("8.8.8.8", 53), timeout=3)
         except OSError:
             self.show_error("Δεν υπάρχει σύνδεση στο internet. Παρακαλώ δοκιμάστε ξανά.")
             return
 
-        new_event = Event(
-            event_id=None,
-            organizer_id=self.current_user.id,
-            title=self.title_entry.get().strip(),
-            description=self.description_entry.get().strip(),
-            category=self.category_combobox.get(),
-            event_date=datetime.strptime(self.date_entry.get().strip(), "%Y-%m-%d %H:%M"),
-            venue=self.venue_entry.get().strip(),
-            is_public=self.is_public_var.get(),
-            max_participants=int(self.max_participants_entry.get()) if self.max_participants_entry.get() else None,
-            is_paid=self.is_paid_var.get(),
-            cost=float(self.cost_entry.get()) if self.cost_entry.get() else 0.0,
-            payment_method=self.payment_method_combobox.get() if self.is_paid_var.get() else None,
-            status="scheduled"
-        )
+        # Use stored form data instead of widget values
+        try:
+            datetime_str = f"{self.form_data['date']} {self.form_data['time']}"
+            event_datetime = datetime.datetime.strptime(datetime_str, "%m/%d/%Y %H:%M")
+        except (ValueError, KeyError) as e:
+            self.show_error("Invalid date/time format in stored data")
+            return
 
-        success, result = new_event.create_event()
+        # Create event manager and set properties
+        event_manager = ManageEvent(self.current_user)
+        event_manager.title = self.form_data["title"]
+        event_manager.description = self.form_data["description"]
+        event_manager.event_date = event_datetime
+        event_manager.venue = self.form_data["location"]
+        event_manager.is_public = self.form_data["event_type"] == "public"
+        event_manager.max_participants = int(self.form_data["max_participants"]) if self.form_data["max_participants"] else None
+        event_manager.is_paid = self.form_data["is_paid"]
+        event_manager.cost = float(self.form_data["price"]) if self.form_data["is_paid"] and self.form_data["price"] else 0.0
+        event_manager.payment_method = self.payment_method_var.get() if self.is_paid_var.get() else None
+        event_manager.status = "scheduled"
+        event_manager.category = "General"  # Using default category for now
+
+        success, result = event_manager.create_event()
 
         if success:
             self.show_success("Η εκδήλωση δημιουργήθηκε με επιτυχία!")
-            self.cancel_creation()
+            self.dashboard.show_page("Manage Events")  # Return to manage events page
         else:
             self.show_error(f"Αποτυχία επικοινωνίας με τη βάση: {result}")
-
-
