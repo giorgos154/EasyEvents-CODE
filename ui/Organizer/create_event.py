@@ -1,5 +1,4 @@
-
-from datetime import datetime
+import datetime
 import tkinter.messagebox as messagebox
 import customtkinter as ctk
 from tkinter.messagebox import askyesno
@@ -802,22 +801,15 @@ class CreateEventPage(ctk.CTkFrame):
         """
         # -- Ενημέρωση των δεδομένων της φόρμας ανά βήμα -- #
         """
-        try:
-            if self.current_step == 0:
-                if hasattr(self, "title_entry"):
-                    self.form_data["title"] = self.title_entry.get()
-                if hasattr(self, "desc_text"):
-                    self.form_data["description"] = self.desc_text.get("1.0", "end-1c")
-                if hasattr(self, "date_entry"):
-                    self.form_data["date"] = self.date_entry.get()
-                if hasattr(self, "time_entry"):
-                    self.form_data["time"] = self.time_entry.get()
+        if self.current_step == 0:
+            self.form_data["title"] = self.title_entry.get()
+            self.form_data["description"] = self.desc_text.get("1.0", "end-1c")
+            self.form_data["date"] = self.date_entry.get()
+            self.form_data["time"] = self.time_entry.get()
 
-            elif self.current_step == 1:
-                if hasattr(self, "location_entry"):
-                    self.form_data["location"] = self.location_entry.get()
-                if hasattr(self, "event_type_var"):
-                    self.form_data["event_type"] = self.event_type_var.get()
+        elif self.current_step == 1:
+            self.form_data["location"] = self.location_entry.get()
+            self.form_data["event_type"] = self.event_type_var.get()
 
         elif self.current_step == 2:
             self.form_data["max_participants"] = self.capacity_entry.get()
@@ -835,10 +827,8 @@ class CreateEventPage(ctk.CTkFrame):
             ]
             self.form_data["notification_settings"]["timing"] = selected_timings
 
-            # Άλλα βήματα που δεν αποθηκεύουν δεδομένα, δεν κάνουμε τίποτα
-
-        except Exception as e:
-            print(f"[ERROR] update_form_data: {e}")
+        else:
+            pass  
 
 
     def show_date_picker(self, event):
@@ -1089,7 +1079,7 @@ class CreateEventPage(ctk.CTkFrame):
             if not capacity.isdigit() or int(capacity) <= 0:
                 return "Εισάγετε έγκυρο αριθμό συμμετεχόντων."
 
-            # Έλεγχος τοποθεσίας από form_data (είναι ήδη ελεγχθεί)
+            # Έλεγχος τοποθεσίας από form_data 
             location = self.form_data.get("location", "").strip()
             if not location:
                 return "Παρακαλώ εισάγετε τοποθεσία εκδήλωσης."
@@ -1105,7 +1095,7 @@ class CreateEventPage(ctk.CTkFrame):
                 except Exception:
                     return "Παρακαλώ εισάγετε έγκυρη τιμή."
 
-        return None  # Όλα οκ
+        return None  
 
 
 
@@ -1143,21 +1133,18 @@ class CreateEventPage(ctk.CTkFrame):
             self.next_btn.configure(text="Next →")
     
     def next_step(self):
-        # Πάρε πρώτα τα δεδομένα από την τρέχουσα φόρμα
         self.update_form_data()
 
-        # Έλεγξε για λάθη
         error = self.validate_event_data()
         if error:
-            self.show_error(error)  # Εμφάνιση λάθους
-            return  # Σταμάτα εδώ
+            self.show_error(error)  # Εμφάνιση popup με το λάθος
+            return  # Μπλοκάρει τη μετάβαση λόγω λάθους
 
-        # Καθάρισε το error label αν υπάρχει
+        # Καθαρίζουμε τυχόν προηγούμενα errors (αν υπάρχει ακόμα)
         if hasattr(self, "error_label") and self.error_label.winfo_exists():
             self.error_label.configure(text="")
 
         if self.current_step < len(self.steps) - 1:
-            # Πήγαινε στο επόμενο βήμα
             self.current_step += 1
             self.show_current_step()
         else:
@@ -1165,10 +1152,7 @@ class CreateEventPage(ctk.CTkFrame):
                 self.show_error("Please select a payment method")
                 return
 
-            # Αποθήκευση event
-            self.save_event()
-
-
+            self.save_event()   
 
 
 
