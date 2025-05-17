@@ -236,3 +236,12 @@ class User(Member):
             return []
         finally:
             conn.close()
+
+class Organizer(Member):
+    """
+    Subclass of Member for event organizers.
+    Placeholder for class diagram.
+    """
+    def __init__(self, user_id: int, username: str, email: str, role: str = 'organizer'):
+        super().__init__(user_id, username, role)
+        self.email = email

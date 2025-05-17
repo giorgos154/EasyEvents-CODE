@@ -63,3 +63,21 @@ class NotificationService:
         print(f"Message: {message}")
         print("All participants have been notified.")
         print("-" * 50)
+
+
+    @staticmethod
+    def notify_organizer_for_withdrawal(organizer_email, event_title, participant_username):
+        """
+        Προσομοίωση ειδοποίησης διοργανωτή για νέα συμμετοχή.
+        """
+        print("\n[EMAIL SIMULATION] Notifying Organizer")
+        print("-" * 50)
+        print(f"To: {organizer_email}")
+        print(f"Subject: Withdrawal from {event_title}")
+        print(f"Body:")
+        print(f"Hello,")
+        print(f"A participant has withdrawn from your event!")
+        print(f"Event: {event_title}")
+        print(f"Participant: {participant_username}")
+        print(f"Please check your event dashboard for more details.")
+        print("-" * 50)

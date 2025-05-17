@@ -139,3 +139,12 @@ class OrganizerDashboard(ctk.CTkFrame):
         Auth.logout()
         from ui.home import HomePage  
         self.master.show_page(HomePage)
+
+
+    def back_to_events(self):
+        # Called by EventDiscussionPage
+        self.show_page("Manage Events")
+
+    def back_to_find_events(self):
+        # Called by InviteFriendsPage
+        self.show_page("Manage Events")

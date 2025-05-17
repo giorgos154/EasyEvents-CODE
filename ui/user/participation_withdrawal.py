@@ -1,4 +1,6 @@
+import customtkinter as ctk
 from classes.event.event import Event
+from classes.event.eventParticipation import EventParticipation
 from classes.services.notification_service import NotificationService
 from datetime import datetime
 
@@ -7,31 +9,26 @@ class WithdrawParticipation:
         pass
 
     def withdraw(self, event_id, user_id, event):
-        # Χρησιμοποιούμε την εκδήλωση που παρέχεται από την κλάση Event
         try:
-            # Έλεγχος αν υπάρχει συμμετοχή
-            if not event.is_user_participating(user_id):
-                return "Participation not found or you are not registered for the event."
-
-            # Έλεγχος ημερομηνίας
+            # Check if event date has passed
             current_date = self.get_current_date()
-
             if current_date > event.event_date:
                 return "Withdrawal is not allowed after the event's deadline."
 
-            # Διαγραφή συμμετοχής μέσω της κλάσης Event
-            if not event.remove_participation(user_id):
-                return "Failed to withdraw participation."
-
-            return "Your participation has been successfully withdrawn."
+            # Create participation instance and withdraw
+            participation = EventParticipation(event_id, user_id)
+            success, message = participation.withdraw()
+            
+            if success:
+                return "Your participation has been successfully withdrawn."
+            else:
+                return message
 
         except Exception as e:
             return f"Error during withdrawal: {str(e)}"
 
     def get_current_date(self):
-        # Επιστρέφει την τρέχουσα ημερομηνία ως datetime αντικείμενο
         return datetime.now()
-
 
 class WithdrawParticipationPage(ctk.CTkFrame):
     def __init__(self, master, dashboard, event_id, user_id):
@@ -40,10 +37,14 @@ class WithdrawParticipationPage(ctk.CTkFrame):
         self.event_id = event_id
         self.user_id = user_id
 
-        # Φέρνουμε τα στοιχεία της εκδήλωσης χρησιμοποιώντας την κλάση Event
         self.event = Event.find_by_id(self.event_id)
         if not self.event:
-            error_label = ctk.CTkLabel(self, text="Error: Event not found.", text_color="red", font=ctk.CTkFont(size=16))
+            error_label = ctk.CTkLabel(
+                self,
+                text="Error: Event not found.",
+                text_color="red",
+                font=ctk.CTkFont(size=16)
+            )
             error_label.pack(pady=50)
             return
 

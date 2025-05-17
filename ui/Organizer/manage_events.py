@@ -2,7 +2,8 @@ import customtkinter as ctk
 from ui.Organizer.create_event import CreateEventPage
 from ui.Organizer.edit_event import EditEventPage
 from ui.Organizer.delete_event import DeleteEventPopup
-
+from ui.user.event_discussion import EventDiscussionPage
+from ui.user.invitefriends import InviteFriendsPage
 
 class ManageEventsPage(ctk.CTkFrame):
     def __init__(self, master, dashboard):
@@ -159,6 +160,7 @@ class ManageEventsPage(ctk.CTkFrame):
             )
             cancel_btn.pack(pady=5)
 
+            # Discussion button
             discussion_btn = ctk.CTkButton(
                 buttons_frame,
                 text="Discussion →",
@@ -169,10 +171,11 @@ class ManageEventsPage(ctk.CTkFrame):
                 height=35,
                 corner_radius=8,
                 text_color="black",
-                command=lambda e=event: self.dashboard.show_event_discussion(e.event_id)
+                command=lambda e=event: self.dashboard.show_page(EventDiscussionPage, event_id=e.event_id)
             )
             discussion_btn.pack(pady=5)
-            
+
+            # Invite Friends button
             invite_btn = ctk.CTkButton(
                 buttons_frame,
                 text="Invite Friends",
@@ -183,7 +186,7 @@ class ManageEventsPage(ctk.CTkFrame):
                 height=35,
                 corner_radius=8,
                 state="normal" if event.status == 'scheduled' else "disabled",
-                command=lambda e=event: self.dashboard.show_invite_friends(e)
+                command=lambda e=event: self.dashboard.show_page(InviteFriendsPage, event=e)
             )
             invite_btn.pack(pady=(5,0))
     

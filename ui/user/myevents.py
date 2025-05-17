@@ -3,6 +3,8 @@ from datetime import datetime
 import time
 import threading
 from src.classes.event.event import Event
+from src.classes.event.eventParticipation import EventParticipation
+from src.classes.services.notification_service import NotificationService
 
 class MyEventsPage(ctk.CTkFrame):
     def __init__(self, master, dashboard):
@@ -18,6 +20,13 @@ class MyEventsPage(ctk.CTkFrame):
         self.events_frame = ctk.CTkScrollableFrame(self, fg_color="white")
         self.events_frame.pack(fill="both", expand=True, padx=20, pady=20)
         
+        self.refresh_events()
+    
+    def refresh_events(self):
+        # Clear existing events
+        for widget in self.events_frame.winfo_children():
+            widget.destroy()
+            
         # Get user's events
         self.events = Event.find_user_events(self.dashboard.current_user.user_id)
         
@@ -93,7 +102,7 @@ class MyEventsPage(ctk.CTkFrame):
                 height=35,
                 corner_radius=8,
                 text_color="black",
-            command=lambda e=event: self.dashboard.show_event_discussion(e.event_id)  # Unchanged, already using event_id
+                command=lambda e=event: self.dashboard.show_event_discussion(e.event_id)
             )
             discussion_btn.pack(pady=(0,5))
             
@@ -161,7 +170,10 @@ class MyEventsPage(ctk.CTkFrame):
             hover_color="#e53935",
             font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
             width=100,
-            command=lambda: [print(f"Withdrawing from {event.title}"), warning.destroy()]
+            command=lambda: [
+                self.withdraw_from_event(event),
+                warning.destroy()
+            ]
         )
         confirm_btn.pack(side="left", padx=10)
         
@@ -176,6 +188,20 @@ class MyEventsPage(ctk.CTkFrame):
             command=warning.destroy
         )
         cancel_btn.pack(side="left", padx=10)
+
+    def withdraw_from_event(self, event):
+        participation = EventParticipation(event.event_id, self.dashboard.current_user.user_id)
+        success, message = participation.withdraw()
+        
+        if success:
+            NotificationService.notify_organizer_for_withdrawal(
+            event.organizer_id,  # organizer email
+            event.title,
+            self.dashboard.current_user.username  # current user's username
+        )
+            self.refresh_events()
+        else:
+            self.show_error(message)
     
     def show_checkin_sequence(self, event):
         # Check if event is happening today
@@ -288,7 +314,6 @@ class MyEventsPage(ctk.CTkFrame):
             time.sleep(2)
             
             # Record check-in
-            from src.classes.event.eventParticipation import EventParticipation
             participation = EventParticipation.find_by_event_user(event.event_id, self.dashboard.current_user.user_id)
             if not participation:
                 progress.destroy()
@@ -302,7 +327,6 @@ class MyEventsPage(ctk.CTkFrame):
                 return
             
             # Notify organizer
-            from src.classes.services.notification_service import NotificationService
             NotificationService.notify_check_in(
                 event.organizer_id,
                 event.title,

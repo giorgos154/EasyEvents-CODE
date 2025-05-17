@@ -177,50 +177,7 @@ class Event:
                 return True
         return False
 
-    def update_event(self):
-        """
-        Ενημερώνει τα στοιχεία της εκδήλωσης στη βάση.
-        """
-        conn = get_db_connection()
-        if not conn:
-            return False, "Could not connect to database."
-
-        try:
-            cursor = conn.cursor()
-            query = """
-                UPDATE events SET
-                    title = %s,
-                    description = %s,
-                    category = %s,
-                    event_date = %s,
-                    venue = %s,
-                    is_public = %s,
-                    max_participants = %s,
-                    is_paid = %s,
-                    cost = %s,
-                    status = %s
-                WHERE event_id = %s
-            """
-            cursor.execute(query, (
-                self.title,
-                self.description,
-                self.category,
-                self.event_date.strftime('%Y-%m-%d %H:%M:%S'),
-                self.venue,
-                int(self.is_public),
-                self.max_participants,
-                int(self.is_paid),
-                self.cost,
-                self.status,
-                self.event_id
-            ))
-            conn.commit()
-            return True, ""
-        except Exception as e:
-            return False, f"Database error: {e}"
-        finally:
-            cursor.close()
-            conn.close()
+    
 
     @classmethod
     def find_user_events(cls, user_id):

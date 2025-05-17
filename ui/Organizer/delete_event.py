@@ -1,9 +1,7 @@
 import customtkinter as ctk
 from classes.event.event import Event
 from classes.services.notification_service import NotificationService
-from classes.event.event_deletion import EventDeletion
-# Αφαιρέθηκε το import ManageEventsPage από εδώ
-
+from classes.event.ManageEvent import ManageEvent
 
 class DeleteEventPopup(ctk.CTkToplevel):
     def __init__(self, master, dashboard, event_id, organizer_id):
@@ -11,10 +9,13 @@ class DeleteEventPopup(ctk.CTkToplevel):
         self.dashboard = dashboard
         self.event_id = event_id
         self.organizer_id = organizer_id
-        self.title("Delete Event")
-        self.geometry("600x300")
+        self.title("Cancel Event")
+        self.geometry("600x400")
         self.transient(master)
         self.grab_set()
+
+        # Periexei to reason pou tha steilei sto notification
+        self.cancel_reason = ctk.StringVar()
 
         self.event = Event.find_by_id(self.event_id)
         if not self.event:
@@ -42,30 +43,54 @@ class DeleteEventPopup(ctk.CTkToplevel):
 
         title = ctk.CTkLabel(
             header_frame,
-            text=f"Delete Event: {self.event.title}",
+            text=f"Cancel Event: {self.event.title}",
             font=ctk.CTkFont(family="Roboto", size=24, weight="bold")
         )
         title.pack(side="left", padx=20)
 
-        delete_button_frame = ctk.CTkFrame(self, fg_color="white")
-        delete_button_frame.pack(pady=30)
+        # Prosthetoume to input field gia to reason tis akyrwsis
+        reason_frame = ctk.CTkFrame(self, fg_color="transparent")
+        reason_frame.pack(pady=20)
 
-        delete_btn = ctk.CTkButton(
-            delete_button_frame,
-            text="Delete Event",
+        reason_label = ctk.CTkLabel(
+            reason_frame,
+            text="Please provide a reason for cancellation:",
+            font=ctk.CTkFont(family="Roboto", size=14)
+        )
+        reason_label.pack()
+
+        reason_entry = ctk.CTkTextbox(
+            reason_frame,
+            width=400,
+            height=100,
+            font=ctk.CTkFont(family="Roboto", size=13)
+        )
+        reason_entry.pack(pady=10)
+
+        cancel_button_frame = ctk.CTkFrame(self, fg_color="white")
+        cancel_button_frame.pack(pady=30)
+
+        cancel_btn = ctk.CTkButton(
+            cancel_button_frame,
+            text="Continue",
             font=ctk.CTkFont(family="Roboto", size=16, weight="bold"),
             fg_color="#D32F2F",
             hover_color="#b62d2d",
             width=200,
             height=50,
             corner_radius=8,
-            command=self.show_delete_confirmation
+            command=lambda: self.show_cancel_confirmation(reason_entry.get("1.0", "end-1c"))
         )
-        delete_btn.pack()
+        cancel_btn.pack()
 
-    def show_delete_confirmation(self):
+    def show_cancel_confirmation(self, reason):
+        if not reason.strip():
+            self.show_error("Please provide a reason for cancellation.")
+            return
+            
+        self.cancel_reason.set(reason)
         dialog = ctk.CTkToplevel(self)
-        dialog.title("Delete Event")
+        dialog.title("Cancel Event")
         dialog.geometry("400x200")
         dialog.transient(self)
         dialog.grab_set()
@@ -75,9 +100,24 @@ class DeleteEventPopup(ctk.CTkToplevel):
         y = (dialog.winfo_screenheight() - dialog.winfo_height()) // 2
         dialog.geometry(f"+{x}+{y}")
 
+        # Elegxoume an yparxoun plirwmenoi symmetexontes
+        has_paid_participants = self._check_paid_participants()
+        
+        if has_paid_participants:
+            message_text = (
+                f"WARNING: There are participants who have paid.\n"
+                f"Refund is required.\n\n"
+                f"Are you sure you want to cancel {self.event.title}?"
+            )
+        else:
+            message_text = (
+                f"Are you sure you want to cancel\n{self.event.title}?\n"
+                f"This action cannot be undone."
+            )
+
         message = ctk.CTkLabel(
             dialog,
-            text=f"Are you sure you want to delete\n{self.event.title}?\nThis action cannot be undone.",
+            text=message_text,
             font=ctk.CTkFont(family="Roboto", size=14),
             justify="center"
         )
@@ -108,19 +148,24 @@ class DeleteEventPopup(ctk.CTkToplevel):
         )
         cancel_btn.pack(side="left", padx=10)
 
+    def _check_paid_participants(self):
+        return self.event.is_paid
+
+
     def _on_confirm(self, dialog):
         dialog.destroy()
-        self.delete_event()
+        self.cancel_event()
 
-    def delete_event(self):
-        event_deletion = EventDeletion()
-        result = event_deletion.delete_event(self.event_id, self.organizer_id)
+    def cancel_event(self):
+        manage_event = ManageEvent(None)  # To none einai OK giati den xrisimopoioume to current_user
+        result = manage_event.cancel_event(self.event_id, self.organizer_id)
 
         if "successfully" in result:
             self.show_success()
+            # Stelnoume to notification me to reason
             NotificationService.notify_participants(
                 self.event.title,
-                "The event has been deleted."
+                f"The event has been cancelled.\nReason: {self.cancel_reason.get()}"
             )
         else:
             self.show_error(result)
@@ -171,7 +216,7 @@ class DeleteEventPopup(ctk.CTkToplevel):
 
         message = ctk.CTkLabel(
             success,
-            text=f"{self.event.title} has been successfully deleted.",
+            text=f"{self.event.title} has been successfully cancelled.",
             font=ctk.CTkFont(family="Roboto", size=16),
             justify="center"
         )
@@ -190,8 +235,7 @@ class DeleteEventPopup(ctk.CTkToplevel):
 
     def _on_success_ok(self):
        from ui.Organizer.manage_events import ManageEventsPage
-       # Αν η τρέχουσα σελίδα είναι ManageEventsPage κάνε refresh
+       # An i trexousa selida einai ManageEventsPage kane refresh
        if hasattr(self.dashboard, 'current_page') and isinstance(self.dashboard.current_page, ManageEventsPage):
            self.dashboard.current_page.refresh_events()
        self.destroy()
-

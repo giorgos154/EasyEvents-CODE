@@ -37,6 +37,32 @@ class EventParticipation:
             cursor.close()
             conn.close()
 
+    def withdraw(self):
+        """Withdraw from event"""
+        conn = get_db_connection()
+        if not conn:
+            return False, "Database connection failed"
+
+        try:
+            cursor = conn.cursor()
+            query = """
+                UPDATE event_participations 
+                SET status = 'withdrawn'
+                WHERE event_id = %s AND user_id = %s
+                AND status = 'registered'
+            """
+            cursor.execute(query, (self.event_id, self.user_id))
+            conn.commit()
+            
+            if cursor.rowcount > 0:
+                return True, "Successfully withdrawn"
+            return False, "Could not withdraw. Please verify registration."
+        except Exception as e:
+            return False, str(e)
+        finally:
+            cursor.close()
+            conn.close()
+
     def register(self):
         """Register for event"""
         conn = get_db_connection()
@@ -104,7 +130,7 @@ class EventParticipation:
             'event_date': event.event_date,
             'venue': event.venue,
             'attendee': attendee,
-        'check_in_time': datetime.now()
+            'check_in_time': datetime.now()
         }
 
     def rate_event(self, event_rating, organizer_rating, comment):
