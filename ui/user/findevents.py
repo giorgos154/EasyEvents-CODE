@@ -15,9 +15,10 @@ def get_events_from_db():
             "date": event.event_date.strftime("%Y-%m-%d %H:%M"),
             "location": event.venue,
             "description": event.description,
-            "price": f"{int(event.cost)}€" if event.is_paid else "0€",  # Format gia times / Free events
-            "event_id": event.event_id,  # Add event_id for details page
-            "is_paid": event.is_paid  # Add is_paid flag for price display
+            "price": f"{int(event.cost)}€" if event.is_paid else "0€",  
+            "event_id": event.event_id,  
+            "is_paid": event.is_paid,  
+            "category": event.category  
         })
 
     return events
@@ -63,7 +64,7 @@ class FindEventsPage(ctk.CTkFrame):
         filter_row1.pack(fill="x", pady=5)
 
         ctk.CTkLabel(filter_row1, text="Category:", font=ctk.CTkFont(family="Roboto", size=14)).pack(side="left")
-        categories = ["All Categories", "Technology", "Music", "Art", "Food", "Sports", "Business", "Education"]
+        categories = ["All Categories", "General", "Music", "Art", "Workshop", "Technology", "Business", "Education"]
         self.category_menu = ctk.CTkOptionMenu(filter_row1, values=categories, fg_color="#C8A165",
                                                button_color="#b38e58", width=150)
         self.category_menu.pack(side="left", padx=(10, 20))
@@ -164,6 +165,20 @@ class FindEventsPage(ctk.CTkFrame):
             ctk.CTkLabel(content_frame, text=event["description"], font=ctk.CTkFont(family="Roboto", size=14),
                          wraplength=500, justify="left").pack(anchor="w", pady=(5, 0))
 
+            # Category tag
+            category_tag = ctk.CTkFrame(
+                content_frame,
+                fg_color="#F0F0F0",
+                corner_radius=12
+            )
+            ctk.CTkLabel(
+                category_tag,
+                text=event["category"],
+                font=ctk.CTkFont(family="Roboto", size=12),
+                text_color="#666666"
+            ).pack(padx=10, pady=5)
+            category_tag.pack(anchor="w", pady=(10, 0))
+
             buttons_frame = ctk.CTkFrame(card, fg_color="white", width=150)
             buttons_frame.pack_propagate(False)
             buttons_frame.pack(side="right", padx=10, pady=10)
@@ -201,7 +216,8 @@ class FindEventsPage(ctk.CTkFrame):
         return search_text in event["title"].lower() or search_text in event["description"].lower()
 
     def matches_category(self, event, category):
-        return category == "All Categories"  # Δεν υπάρχει ανάγκη να εξετάσουμε tags
+        
+        return category == "All Categories" or category == event["category"]
 
     def matches_city(self, event, city):
         return city == "All Cities" or city.lower() in event["location"].lower()

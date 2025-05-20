@@ -731,7 +731,7 @@ class CreateEventPage(ctk.CTkFrame):
         )
         target_label.pack(anchor="w", pady=(0, 10))
 
-        targets = ["All Participants", "Specific Groups", "Custom Lists"]
+        targets = ["All Users", "Users following you", "Custom Lists"]
         selected_target = self.form_data.get("notification_settings", {}).get("target", targets[0])
         self.target_var = ctk.StringVar(value=selected_target)
 
@@ -1252,7 +1252,7 @@ class CreateEventPage(ctk.CTkFrame):
         success, result = event_manager.create_event()
 
         if success:
-            self.show_success("Η εκδήλωση δημιουργήθηκε με επιτυχία!")
+            self.show_success("Event Created Successfully!")
             self.dashboard.show_page("Manage Events")  # Return to manage events page
         else:
             self.show_error(f"Αποτυχία επικοινωνίας με τη βάση: {result}")

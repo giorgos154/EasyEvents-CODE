@@ -163,9 +163,35 @@ class MyProfilePage(ctk.CTkFrame):
         }
 
         try:
+            
+            # Name validation - no numbers or special characters
+            if not all(c.isalpha() or c.isspace() for c in updated_data["First Name"]):
+                raise ValueError("\nFirst name can only contain letters")
+                
+            if not all(c.isalpha() or c.isspace() for c in updated_data["Last Name"]):
+                raise ValueError("\nLast name can only contain letters")
+
+            # Date of birth validation - format YYYY-MM-DD
+            try:
+                datetime.strptime(updated_data["Date of Birth"], '%Y-%m-%d')
+            except ValueError:
+                raise ValueError("\nDate of birth must be in format YYYY-MM-DD")
+
+            # Phone number validation - only numbers allowed
+            if not updated_data["Phone Number"].replace('+', '').isdigit():
+                raise ValueError("\nPhone number can only contain numbers and '+' symbol")
+
+            # Postal code validation - only numbers allowed
+            if not updated_data["Postal Code"].isdigit():
+                raise ValueError("\nPostal code can only contain numbers")
+
+            # Empty fields validation
+            if any(not value for value in updated_data.values()):
+                raise ValueError("All fields must be filled out")
+            
             success = self.current_user.update_user_info(updated_data)
             if not success:
-                raise Exception("Failed to update profile")
+                raise Exception("Failed to update profile\n")
 
             # Show success message
             dialog = ctk.CTkToplevel(self)

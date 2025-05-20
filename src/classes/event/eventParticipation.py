@@ -71,6 +71,20 @@ class EventParticipation:
 
         try:
             cursor = conn.cursor()
+
+            # First check if user is already registered
+            check_query = """
+                SELECT status 
+                FROM event_participations 
+                WHERE event_id = %s AND user_id = %s
+                AND status IN ('registered', 'checkedIn')
+            """
+            cursor.execute(check_query, (self.event_id, self.user_id))
+            existing = cursor.fetchone()
+        
+            if existing:
+                return False, "Failed to register. \nYou might already be registered."
+            
             query = """
                 INSERT INTO event_participations 
                 (user_id, event_id, status)
@@ -79,6 +93,7 @@ class EventParticipation:
             cursor.execute(query, (self.user_id, self.event_id, self.status))
             conn.commit()
             return True, "Successfully registered"
+          
         except Exception as e:
             return False, str(e)
         finally:

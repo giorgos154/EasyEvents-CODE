@@ -112,7 +112,7 @@ class RewardsPage(ctk.CTkFrame):
                 height=35,
                 corner_radius=8,
                 state="normal",
-                command=lambda r=reward: self.attempt_redeem(r)
+                command=lambda r=reward: self.validate_points(r)
             )
             redeem_btn.pack(expand=True)
 
@@ -149,7 +149,7 @@ class RewardsPage(ctk.CTkFrame):
         )
         ok_btn.pack(pady=20)
 
-    def attempt_redeem(self, reward):
+    def validate_points(self, reward):
         if self.available_points < reward["points_required"]:
             self.show_error_popup("Not enough points to redeem this reward.")
         else:

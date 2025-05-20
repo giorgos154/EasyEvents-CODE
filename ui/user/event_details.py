@@ -133,15 +133,14 @@ class EventDetailsPage(ctk.CTkFrame):
         # Join Event Button 
         join_btn = ctk.CTkButton(
             buttons_frame,
-            text="Join Event  →" if status == 'Joinable' else status,
+            text="Join Event  →",
             font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
-            fg_color="#4CAF50" if status == 'Joinable' else "gray",
+            fg_color="#4CAF50",
             hover_color="#45a049" if status == 'Joinable' else "#666666",
             width=200,
             height=40,
             corner_radius=8,
-            command=self.join_event if status == 'Joinable' else None,
-            state="normal" if status == 'Joinable' else "disabled"
+            command=self.join_event 
         )
         join_btn.pack(side="left", padx=10)
     
@@ -231,7 +230,7 @@ class EventDetailsPage(ctk.CTkFrame):
             self.show_payment_dialog()
         else:
             check_dialog.destroy()
-            self.show_error("Sorry, the event is now full.")
+            self.show_error("Cannot Join Event. \nEvent has reached max participants.")
     
     def show_payment_dialog(self):
         # Show payment dialog and process payment

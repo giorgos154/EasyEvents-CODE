@@ -170,6 +170,37 @@ class MyInvitesPage(ctk.CTkFrame):
         result = messagebox.askyesno("Reject Invite", f"Reject invitation to {invite['event_title']}?")
         if result:
             if self.invite_manager.reject_invite(invite["invitation_id"]):
-                self.load_invites()
+                # Show confirmation dialog
+                dialog = ctk.CTkToplevel(self)
+                dialog.title("Success")
+                dialog.geometry("300x150")
+                dialog.transient(self)
+                dialog.grab_set()
+                
+                # Center dialog
+                dialog.update_idletasks()
+                x = (dialog.winfo_screenwidth() - dialog.winfo_width()) // 2
+                y = (dialog.winfo_screenheight() - dialog.winfo_height()) // 2
+                dialog.geometry(f"+{x}+{y}")
+                
+                # Success message
+                message = ctk.CTkLabel(
+                    dialog,
+                    text="Invitation Rejected.\n Your friend has been notified.",
+                    font=ctk.CTkFont(family="Roboto", size=14)
+                )
+                message.pack(expand=True)
+                
+                # OK button that closes dialog and refreshes invites
+                ok_btn = ctk.CTkButton(
+                    dialog,
+                    text="OK",
+                    fg_color="#4CAF50",
+                    hover_color="#45a049",
+                    font=ctk.CTkFont(family="Roboto", size=14, weight="bold"),
+                    command=lambda: [dialog.destroy(), self.load_invites()]
+                )
+                ok_btn.pack(pady=20)
             else:
                 messagebox.showerror("Error", "Failed to reject invitation.")
+
